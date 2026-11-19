@@ -316,3 +316,17 @@ html[data-mode="light"] .brand-blush,
   height: 3px;
   background: linear-gradient(118deg, #E0A93A 0%, #4C79D9 62%, #7B2FBE 100%);
 }
+
+/* Native controls (radio, checkbox, date, select) follow the app's
+ * mode rather than the OS, and pick up the brand accent. */
+:root,
+html[data-mode="light"] {
+  color-scheme: light;
+}
+html[data-mode="dark"] {
+  color-scheme: dark;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--primary);
+}
