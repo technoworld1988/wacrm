@@ -17,6 +17,7 @@ import {
   viewedConversationFromLocation,
   type NotificationLabels,
 } from "@/lib/notifications/browser-notify";
+import { readPushDeviceFlag } from "@/lib/push/client";
 
 const serverSnapshot = () => false;
 
@@ -129,6 +130,9 @@ export function useBrowserNotifications(): void {
           // browser without the preference flipping.
           if (getNotificationPermission() !== "granted") return;
           const msg = payload.new as Message;
+          // When this device has push enabled, the service worker already
+          // alerts for a hidden tab — skip here so it doesn't ring twice.
+          if (document.visibilityState !== "visible" && readPushDeviceFlag()) return;
           const shouldNotify = shouldNotifyForMessage(msg, {
             documentVisible: document.visibilityState === "visible",
             viewingConversationId: viewedConversationFromLocation(

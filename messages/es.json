@@ -2227,6 +2227,27 @@
       "textPlaceholder": "El texto del mensaje que se insertará",
       "cancel": "Cancelar",
       "save": "Guardar"
+    },
+    "pushNotifications": {
+      "title": "Phone & background notifications",
+      "description": "Get an alert on this phone or computer for every new customer message, even when the CRM is closed. Turn it on separately on each device.",
+      "toggleLabel": "Notify this device about new customer messages",
+      "toggleDesc": "Chats assigned to you, or every unassigned chat. Works with the app closed.",
+      "sendTest": "Send test notification",
+      "testTitle": "Test notification",
+      "testBody": "Notifications are working on this device.",
+      "testSent": "Test sent — it should appear in a few seconds.",
+      "testFailed": "No device accepted the test. Turn notifications off and on again.",
+      "enabledToast": "Notifications are on for this device.",
+      "deniedToast": "Notifications are blocked for this site",
+      "deniedHint": "Allow notifications for this site in your browser or phone settings, then try again.",
+      "errorToast": "Couldn't turn on notifications. Please try again.",
+      "notConfigured": "Push notifications aren't set up on this server yet.",
+      "unsupported": "This browser doesn't support background notifications. Try Chrome on Android or a computer.",
+      "iosTitle": "On iPhone, add the CRM to your home screen first:",
+      "iosStep1": "Tap the Share button in Safari.",
+      "iosStep2": "Choose \"Add to Home Screen\", then tap Add.",
+      "iosStep3": "Open the CRM from the new icon and come back to this page to turn notifications on."
     }
   },
   "SignupPage": {

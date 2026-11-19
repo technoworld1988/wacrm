@@ -39,6 +39,12 @@ const metadata: Metadata = {
   },
   icons: {
     icon: [{ url: "/icon" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: process.env.NEXT_PUBLIC_APP_NAME?.trim() || "WhatsApp CRM",
+    statusBarStyle: "black-translucent",
   },
   formatDetection: {
     email: false,

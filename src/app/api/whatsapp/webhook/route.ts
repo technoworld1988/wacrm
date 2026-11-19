@@ -23,6 +23,7 @@ import { resumeAwaitingReply, runAutomationsForTrigger } from '@/lib/automations
 import { dispatchInboundToFlows } from '@/lib/flows/engine'
 import { dispatchInboundToAiReply } from '@/lib/ai/auto-reply'
 import { dispatchWebhookEvent } from '@/lib/webhooks/deliver'
+import { notifyInboundMessage } from '@/lib/push/inbound'
 import {
   applyBroadcastRecipientStatus,
   flagBroadcastReply,
@@ -779,6 +780,18 @@ async function processMessage(
   // so the broadcast's `replied_count` advances (via the aggregate
   // trigger installed in migration 003).
   await flagBroadcastReplyIfAny(accountId, contactRecord.id)
+
+  // Phone / background push to the assigned agent (or the whole team when
+  // unassigned). Awaited for the same `after()` reason as the dispatches
+  // below; owns its try/catch and is a no-op without VAPID keys.
+  await notifyInboundMessage(supabaseAdmin(), {
+    accountId,
+    conversationId: conversation.id,
+    contactId: contactRecord.id,
+    messageId: message.id,
+    contentType,
+    contentText,
+  })
 
   // ============================================================
   // Flow runner dispatch.

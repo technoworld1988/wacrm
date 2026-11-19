@@ -14,6 +14,9 @@ const tablesWithoutDomainData = new Set([
   "account_invitations",
   "member_presence",
   "pending_message_statuses",
+  // Per-device push registrations: cascade-deleted with the account,
+  // never business data worth refusing a join over.
+  "push_subscriptions",
 ]);
 
 function accountScopedTables(): Set<string> {
