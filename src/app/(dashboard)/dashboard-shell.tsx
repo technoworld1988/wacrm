@@ -9,13 +9,16 @@ import { Header } from "@/components/layout/header";
 import { AccountAccessAlert } from "@/components/layout/account-access-alert";
 import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
 import { BrowserNotificationsListener } from "@/components/notifications/browser-notifications-listener";
+import { BrandColors, type BrandInfo } from "@/components/brand/brand";
+import { AccountGate } from "@/components/layout/account-gate";
+import { accountAccess } from "@/lib/platform/plans";
 
 // Auth-gated dashboard shell. Extracted from the layout so the layout
 // itself can stay a server component and export metadata (noindex) —
 // client components can't export Next's metadata object.
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, account, isPlatformAdmin } = useAuth();
   const router = useRouter();
   const t = useTranslations("DashboardShell");
 
@@ -30,6 +33,13 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, router]);
 
+  // Clients created with a temporary password must pick their own
+  // before using the app (flag set by the platform admin API).
+  const mustChangePassword = Boolean(user?.user_metadata?.must_change_password);
+  useEffect(() => {
+    if (mustChangePassword) router.replace("/reset-password?welcome=1");
+  }, [mustChangePassword, router]);
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -41,7 +51,32 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  if (!user || mustChangePassword) return null;
+
+  const brand: BrandInfo | null = account
+    ? {
+        whiteLabel: account.white_label,
+        name: account.brand_name,
+        logoUrl: account.brand_logo_url,
+        primary: account.brand_primary,
+        accent: account.brand_accent,
+      }
+    : null;
+
+  // Paused / expired / not-yet-activated client: keep them out of the
+  // app (their data is untouched) and show how to renew. The platform
+  // admin is never locked out of their own session.
+  const access = account
+    ? accountAccess({ status: account.status, plan_ends_at: account.plan_ends_at })
+    : "ok";
+  if (access !== "ok" && !isPlatformAdmin) {
+    return (
+      <>
+        <BrandColors brand={brand} />
+        <AccountGate state={access} brand={brand} />
+      </>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -51,8 +86,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       {/* Desktop alerts for new customer messages (opt-in via Settings →
           Your profile). Headless — renders nothing. */}
       <BrowserNotificationsListener />
+      <BrandColors brand={brand} />
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="brand-blush flex flex-1 flex-col overflow-hidden">
         <Header onOpenSidebar={() => setSidebarOpen(true)} />
         {/* Thinner horizontal padding on mobile so cards have room to breathe. */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">

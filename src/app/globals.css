@@ -90,7 +90,6 @@
 
 /* ---- MODE: neutral surfaces ---- */
 
-:root,
 html[data-mode="dark"] {
   --background: oklch(0.13 0.01 260);
   --foreground: oklch(0.985 0 0);
@@ -124,24 +123,27 @@ html[data-mode="dark"] {
   --status-critical: #e05252;
 }
 
+:root,
 html[data-mode="light"] {
-  --background: oklch(0.99 0.002 260);
-  --foreground: oklch(0.21 0.01 260);
-  --card: oklch(1 0 0);
-  --card-2: oklch(0.985 0.002 260);
-  --card-foreground: oklch(0.21 0.01 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.01 260);
-  --secondary: oklch(0.967 0.003 260);
-  --secondary-foreground: oklch(0.25 0.01 260);
-  --muted: oklch(0.967 0.003 260);
-  --muted-foreground: oklch(0.52 0.015 260);
-  --accent: oklch(0.96 0.004 260);
-  --accent-foreground: oklch(0.25 0.01 260);
+  /* TECHNO WORLD light: lavender page, white work surfaces, navy ink
+   * (palette from technoworld1988.com). */
+  --background: #F1F2FA;
+  --foreground: #1B1655;
+  --card: #FFFFFF;
+  --card-2: #F7F7FB;
+  --card-foreground: #1B1655;
+  --popover: #FFFFFF;
+  --popover-foreground: #1B1655;
+  --secondary: #EEF0FA;
+  --secondary-foreground: #1B1655;
+  --muted: #EEF0FA;
+  --muted-foreground: #55577F;
+  --accent: #E9ECFB;
+  --accent-foreground: #1B1655;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.004 260);
-  --input: oklch(0.922 0.004 260);
-  --chart-2: oklch(0.6 0.1 260);
+  --border: rgba(27, 22, 85, 0.12);
+  --input: rgba(27, 22, 85, 0.18);
+  --chart-2: #E0A93A;
   --chart-3: oklch(0.7 0.06 260);
   --chart-4: oklch(0.8 0.04 260);
   --chart-5: oklch(0.87 0.03 260);
@@ -160,6 +162,22 @@ html[data-mode="light"] {
 /* ---- ACCENT: primary color ---- */
 
 :root,
+html[data-theme="technoworld"] {
+  /* Aurora blue primary; gold carries highlights (chart-2, badges).
+   * Violet is kept to the aurora glow only. */
+  --primary: #3E6FD6;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #2C69A7;
+  --primary-soft: rgba(62, 111, 214, 0.12);
+  --primary-soft-2: rgba(62, 111, 214, 0.2);
+  --ring: #3E6FD6;
+  --chart-1: #3E6FD6;
+  --chart-2: #E0A93A;
+  --sidebar-primary: #3E6FD6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-ring: #3E6FD6;
+}
+
 html[data-theme="violet"] {
   --primary: oklch(0.526 0.247 293);
   --primary-foreground: oklch(0.985 0 0);
@@ -242,4 +260,59 @@ html[data-theme="rose"] {
   html {
     @apply font-sans;
   }
+}
+/* ============================================================
+ * TECHNO WORLD brand surfaces
+ *
+ * .brand-aurora   navy panel with the site's gold → blue glow and a
+ *                 faint violet edge. Re-scopes the neutral tokens so
+ *                 everything inside (nav links, muted text, borders)
+ *                 renders light-on-navy without per-element classes.
+ * .brand-blush    lavender page with the soft gold/violet blush at the
+ *                 top only — work surfaces stay white cards.
+ * .brand-bar      the thin gold → blue → violet strip.
+ * White-label clients override --primary via inline style on <html>.
+ * ============================================================ */
+.brand-aurora,
+.brand-aurora-bg {
+  background:
+    radial-gradient(90% 38% at 0% 0%, rgba(224, 169, 58, 0.3), transparent 70%),
+    radial-gradient(90% 40% at 100% 48%, rgba(62, 111, 214, 0.36), transparent 70%),
+    radial-gradient(80% 28% at 15% 100%, rgba(123, 47, 190, 0.2), transparent 70%),
+    linear-gradient(170deg, #1B1655, #171247);
+}
+.brand-aurora {
+  --card: transparent;
+  --foreground: #FFFFFF;
+  --muted: rgba(255, 255, 255, 0.12);
+  --muted-foreground: #C9CEEE;
+  --border: rgba(255, 255, 255, 0.14);
+  --primary: #F0CF86;
+  --primary-foreground: #1B1655;
+  --popover: #FFFFFF;
+  --popover-foreground: #1B1655;
+  --accent: #E9ECFB;
+  --accent-foreground: #1B1655;
+  color: #FFFFFF;
+}
+.brand-aurora [data-slot="dropdown-menu-content"],
+.brand-aurora [role="menu"] {
+  --foreground: #1B1655;
+  --muted-foreground: #55577F;
+  --border: rgba(27, 22, 85, 0.12);
+  --muted: #EEF0FA;
+}
+
+html[data-mode="light"] .brand-blush,
+:root:not([data-mode="dark"]) .brand-blush {
+  background:
+    radial-gradient(45% 260px at 3% 0%, rgba(224, 169, 58, 0.3), transparent 70%),
+    radial-gradient(45% 240px at 97% 0%, rgba(123, 47, 190, 0.16), transparent 70%),
+    radial-gradient(40% 200px at 50% 0%, rgba(76, 121, 217, 0.12), transparent 70%),
+    var(--background);
+}
+
+.brand-bar {
+  height: 3px;
+  background: linear-gradient(118deg, #E0A93A 0%, #4C79D9 62%, #7B2FBE 100%);
 }

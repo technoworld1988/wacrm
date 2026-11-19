@@ -41,7 +41,9 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Profile",
     "menuSettings": "Settings",
-    "menuSignOut": "Sign out"
+    "menuSignOut": "Sign out",
+    "adminPanel": "Admin panel",
+    "poweredBy": "Powered by TECHNO WORLD"
   },
   "Header": {
     "dashboard": "Dashboard",
@@ -2271,7 +2273,11 @@
     "creating": "Creating account...",
     "submit": "Create account",
     "haveAccount": "Already have an account?",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "closedTitle": "Accounts are created by TECHNO WORLD",
+    "closedDesc": "To get a CRM account for your business, contact us on WhatsApp. If a teammate invited you, open the invite link they sent.",
+    "closedContact": "Contact on WhatsApp",
+    "closedLogin": "Already have an account? Sign in"
   },
   "ForgotPasswordPage": {
     "checkEmailTitle": "Check your email",
@@ -2571,7 +2577,8 @@
         "admin": "admin",
         "agent": "agent",
         "viewer": "viewer"
-      }
+      },
+      "accountPaused": "This account is paused. Contact TECHNO WORLD to renew it."
     },
     "rateLimitExceeded": "Rate limit exceeded",
     "send": {
@@ -2955,5 +2962,14 @@
       "metaApiStatus": "Meta API error: {status}",
       "syncFailed": "Failed to sync templates"
     }
+  },
+  "AccountGate": {
+    "pausedTitle": "Your account is paused",
+    "expiredTitle": "Your plan has ended",
+    "pendingTitle": "Your account is waiting for activation",
+    "pausedDesc": "Your chats, contacts and settings are safe. Renew your plan to start using the CRM again.",
+    "pendingDesc": "New accounts are switched on by TECHNO WORLD. Get in touch and we will set you up.",
+    "contact": "Contact on WhatsApp",
+    "signOut": "Sign out"
   }
 }

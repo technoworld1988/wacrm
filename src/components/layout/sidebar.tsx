@@ -10,6 +10,7 @@ import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import {
   Bell,
   Bot,
+  Building2,
   Crown,
   GitBranch,
   LayoutDashboard,
@@ -27,6 +28,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
+import { BrandLogo, PoweredBy, type BrandInfo } from "@/components/brand/brand";
 
 // Per-role chip metadata used in the sidebar's account strip + the
 // Members tab roster. Keeping this near both consumers in a single
@@ -116,7 +118,17 @@ import { useTranslations } from "next-intl";
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const t = useTranslations("Sidebar");
   const pathname = usePathname();
-  const { profile, profileLoading, account, accountRole, signOut } = useAuth();
+  const { profile, profileLoading, account, accountRole, signOut, isPlatformAdmin } =
+    useAuth();
+  const brand: BrandInfo | null = account
+    ? {
+        whiteLabel: account.white_label,
+        name: account.brand_name,
+        logoUrl: account.brand_logo_url,
+        primary: account.brand_primary,
+        accent: account.brand_accent,
+      }
+    : null;
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
   // Only surface the account-name strip when it actually carries
@@ -176,7 +188,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       <aside
         className={cn(
           // Mobile: fixed drawer that slides in from the left.
-          "fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-border bg-card",
+          // Navy aurora panel (TECHNO WORLD brand); re-scopes the colour
+          // tokens so the links below render light-on-navy.
+          "brand-aurora fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col",
           "transition-transform duration-200 ease-out will-change-transform",
           open ? "translate-x-0" : "-translate-x-full",
           // Desktop: static, always visible — reset all the mobile framing.
@@ -186,14 +200,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       >
         {/* Logo row. On mobile we put a close button here; on desktop the
             close button is hidden since the sidebar is always-visible. */}
-        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">
-              {t("title")}
-            </span>
+        <div className="flex h-[72px] shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+          <Link href="/dashboard" className="flex min-w-0 items-center gap-2" aria-label={t("title")}>
+            <BrandLogo brand={brand} />
           </Link>
           <button
             type="button"
@@ -271,6 +280,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           <div className="my-4 border-t border-border" />
 
           <ul className="flex flex-col gap-1">
+            {isPlatformAdmin && (
+              <li>
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-3 rounded-lg border border-[#F0CF86]/40 px-3 py-2.5 text-sm font-medium text-[#F0CF86] transition-colors hover:bg-muted lg:py-2"
+                >
+                  <Building2 className="h-4 w-4" />
+                  {t("adminPanel")}
+                </Link>
+              </li>
+            )}
             {bottomNavItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
@@ -394,6 +414,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <PoweredBy brand={brand} label={t("poweredBy")} />
         </div>
       </aside>
     </>

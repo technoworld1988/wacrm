@@ -30,8 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: process.env.NEXT_PUBLIC_APP_NAME?.trim() || "TECHNO WORLD CRM",
+    template: `%s — ${process.env.NEXT_PUBLIC_APP_NAME?.trim() || "TECHNO WORLD CRM"}`,
   },
   robots: {
     index: false,
@@ -43,7 +43,7 @@ const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: process.env.NEXT_PUBLIC_APP_NAME?.trim() || "WhatsApp CRM",
+    title: process.env.NEXT_PUBLIC_APP_NAME?.trim() || "TECHNO WORLD CRM",
     statusBarStyle: "black-translucent",
   },
   formatDetection: {
@@ -54,7 +54,7 @@ const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
+  themeColor: "#1B1655",
   colorScheme: "dark light",
 };
 

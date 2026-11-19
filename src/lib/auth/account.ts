@@ -31,6 +31,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { hasMinRole, isAccountRole, type AccountRole } from "./roles";
 import { getT } from "@/lib/i18n/translate";
+import { accountAccess } from "@/lib/platform/plans";
 
 const t = getT("LibErrors.auth");
 
@@ -152,7 +153,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
   // RLS, so it stays robust against cache staleness and older schemas.
   const { data: account, error: accountErr } = await supabase
     .from("accounts")
-    .select("id, name")
+    .select("id, name, status, plan_ends_at")
     .eq("id", data.account_id)
     .maybeSingle();
 
@@ -164,6 +165,14 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     // account_id points at no readable account row — orphaned profile
     // or an RLS gap. Same "can't scope this user" outcome as above.
     throw new ForbiddenError(t("notLinked"));
+  }
+
+  // Paused / not-yet-activated / expired client accounts keep their
+  // data but can't use the app until the platform admin renews them
+  // (migration 061). Inbound webhooks run on the service role and
+  // still store incoming messages meanwhile.
+  if (accountAccess(account) !== "ok") {
+    throw new ForbiddenError(t("accountPaused"));
   }
 
   return {

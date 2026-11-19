@@ -43,6 +43,16 @@ interface AccountSummary {
   /** Default deal currency (ISO-4217). NOT NULL DEFAULT 'USD' in the
    *  DB (migration 021); narrowed to DEFAULT_CURRENCY when absent. */
   default_currency: string;
+  /** Platform plan state (migration 061). Null on older schemas. */
+  status: string | null;
+  plan: string | null;
+  plan_ends_at: string | null;
+  /** White-label branding, set by the platform admin. */
+  white_label: boolean;
+  brand_name: string | null;
+  brand_logo_url: string | null;
+  brand_primary: string | null;
+  brand_accent: string | null;
 }
 
 /**
@@ -112,6 +122,8 @@ interface AuthContextValue {
   accountRole: AccountRole | null;
   /** Lightweight account meta — id + name + default_currency. Null while loading. */
   account: AccountSummary | null;
+  /** Listed in `platform_admins` — may open /admin. */
+  isPlatformAdmin: boolean;
   /** Account default deal currency. Falls back to DEFAULT_CURRENCY
    *  while loading or when no account is resolved, so callers can use
    *  it unconditionally. */
@@ -163,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [account, setAccount] = useState<AccountSummary | null>(null);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   // Why the account/role couldn't be established, when it couldn't.
   // Null on the happy path.
@@ -239,7 +252,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .from("accounts")
             // default_currency added in migration 021; narrowed to the
             // USD fallback below for older schemas where it reads null.
-            .select("id, name, default_currency")
+            .select(
+              "id, name, default_currency, status, plan, plan_ends_at, white_label, brand_name, brand_logo_url, brand_primary, brand_accent",
+            )
             .eq("id", data.account_id)
             .maybeSingle();
           if (accountErr) {
@@ -254,6 +269,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               id: account.id,
               name: account.name,
               default_currency: account.default_currency ?? DEFAULT_CURRENCY,
+              status: account.status ?? null,
+              plan: account.plan ?? null,
+              plan_ends_at: account.plan_ends_at ?? null,
+              white_label: Boolean(account.white_label),
+              brand_name: account.brand_name ?? null,
+              brand_logo_url: account.brand_logo_url ?? null,
+              brand_primary: account.brand_primary ?? null,
+              brand_accent: account.brand_accent ?? null,
             };
           }
         }
@@ -282,6 +305,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           account_role: accountRole,
         });
         setAccount(accountRow);
+        // Own row only (RLS); absent table/row ⇒ not an admin.
+        const { data: adminRow } = await supabase
+          .from("platform_admins")
+          .select("user_id")
+          .eq("user_id", userId)
+          .maybeSingle();
+        setIsPlatformAdmin(Boolean(adminRow));
         if (!data.account_id || !accountRole) {
           // The row exists but carries no tenancy. Migration 017 made
           // both columns NOT NULL for new signups, so this is a user
@@ -435,6 +465,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         refreshProfile,
         account,
+        isPlatformAdmin,
         defaultCurrency: account?.default_currency ?? DEFAULT_CURRENCY,
         accountStatus,
         accountStatusDetail: statusDetail,
@@ -467,6 +498,7 @@ export function useAuth(): AuthContextValue {
       },
       refreshProfile: async () => {},
       account: null,
+      isPlatformAdmin: false,
       defaultCurrency: DEFAULT_CURRENCY,
       // Outside the provider there is nothing to resolve yet — 'loading'
       // keeps the access alert from firing on, say, the login page.

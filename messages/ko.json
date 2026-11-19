@@ -41,7 +41,9 @@
     "defaultAvatar": "아바타",
     "menuProfile": "프로필",
     "menuSettings": "설정",
-    "menuSignOut": "로그아웃"
+    "menuSignOut": "로그아웃",
+    "adminPanel": "Admin panel",
+    "poweredBy": "Powered by TECHNO WORLD"
   },
   "Header": {
     "dashboard": "대시보드",
@@ -2271,7 +2273,11 @@
     "creating": "계정 만드는 중...",
     "submit": "계정 만들기",
     "haveAccount": "이미 계정이 있으신가요?",
-    "signIn": "로그인"
+    "signIn": "로그인",
+    "closedTitle": "Accounts are created by TECHNO WORLD",
+    "closedDesc": "To get a CRM account for your business, contact us on WhatsApp. If a teammate invited you, open the invite link they sent.",
+    "closedContact": "Contact on WhatsApp",
+    "closedLogin": "Already have an account? Sign in"
   },
   "ForgotPasswordPage": {
     "checkEmailTitle": "이메일을 확인하세요",
@@ -2571,7 +2577,8 @@
         "admin": "관리자",
         "agent": "상담원",
         "viewer": "뷰어"
-      }
+      },
+      "accountPaused": "This account is paused. Contact TECHNO WORLD to renew it."
     },
     "rateLimitExceeded": "요청 한도를 초과했습니다",
     "send": {
@@ -2955,5 +2962,14 @@
       "metaApiStatus": "Meta API 오류: {status}",
       "syncFailed": "템플릿을 동기화하지 못했습니다"
     }
+  },
+  "AccountGate": {
+    "pausedTitle": "Your account is paused",
+    "expiredTitle": "Your plan has ended",
+    "pendingTitle": "Your account is waiting for activation",
+    "pausedDesc": "Your chats, contacts and settings are safe. Renew your plan to start using the CRM again.",
+    "pendingDesc": "New accounts are switched on by TECHNO WORLD. Get in touch and we will set you up.",
+    "contact": "Contact on WhatsApp",
+    "signOut": "Sign out"
   }
 }

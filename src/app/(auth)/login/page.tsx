@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -15,7 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare, UsersRound } from "lucide-react";
+import { UsersRound } from "lucide-react";
+import { BrandLogo, PoweredBy, type BrandInfo } from "@/components/brand/brand";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless it sits under a Suspense boundary. We split the form into
@@ -53,6 +54,22 @@ function LoginPageInner() {
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
+  // On a white-label client's own web address, show their brand.
+  const [brand, setBrand] = useState<BrandInfo | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/branding")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j?.brand) return;
+        setBrand({ whiteLabel: true, ...j.brand });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -84,14 +101,16 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border bg-card">
+    <div className="brand-aurora-bg flex min-h-screen flex-col items-center justify-center gap-4 px-4 py-10">
+      <Card className="w-full max-w-md border-border bg-card shadow-xl">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+          <div className="mb-3 flex justify-center">
             {inviteToken ? (
-              <UsersRound className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                <UsersRound className="h-6 w-6 text-primary" />
+              </div>
             ) : (
-              <MessageSquare className="h-6 w-6 text-primary" />
+              <BrandLogo brand={brand} size="lg" />
             )}
           </div>
           <CardTitle className="text-xl text-foreground">
@@ -162,6 +181,7 @@ function LoginPageInner() {
             </Button>
           </form>
 
+          {inviteToken && (
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {t('noAccount')}{" "}
             <Link
@@ -175,8 +195,12 @@ function LoginPageInner() {
               {t('createAccount')}
             </Link>
           </p>
+          )}
         </CardContent>
       </Card>
+      <div className="[&_a]:text-white/70 [&_a:hover]:text-white">
+        <PoweredBy brand={brand} label="Powered by TECHNO WORLD" />
+      </div>
     </div>
   );
 }

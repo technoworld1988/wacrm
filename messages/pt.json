@@ -41,7 +41,9 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Perfil",
     "menuSettings": "Configurações",
-    "menuSignOut": "Sair"
+    "menuSignOut": "Sair",
+    "adminPanel": "Admin panel",
+    "poweredBy": "Powered by TECHNO WORLD"
   },
   "Header": {
     "dashboard": "Painel",
@@ -2271,7 +2273,11 @@
     "creating": "Criando conta...",
     "submit": "Criar conta",
     "haveAccount": "Já tem uma conta?",
-    "signIn": "Entrar"
+    "signIn": "Entrar",
+    "closedTitle": "Accounts are created by TECHNO WORLD",
+    "closedDesc": "To get a CRM account for your business, contact us on WhatsApp. If a teammate invited you, open the invite link they sent.",
+    "closedContact": "Contact on WhatsApp",
+    "closedLogin": "Already have an account? Sign in"
   },
   "ForgotPasswordPage": {
     "checkEmailTitle": "Verifique seu e-mail",
@@ -2571,7 +2577,8 @@
         "admin": "Administrador",
         "agent": "Agente",
         "viewer": "Visualizador"
-      }
+      },
+      "accountPaused": "This account is paused. Contact TECHNO WORLD to renew it."
     },
     "rateLimitExceeded": "Limite de requisições excedido",
     "send": {
@@ -2955,5 +2962,14 @@
       "metaApiStatus": "Erro da API da Meta: {status}",
       "syncFailed": "Falha ao sincronizar os modelos"
     }
+  },
+  "AccountGate": {
+    "pausedTitle": "Your account is paused",
+    "expiredTitle": "Your plan has ended",
+    "pendingTitle": "Your account is waiting for activation",
+    "pausedDesc": "Your chats, contacts and settings are safe. Renew your plan to start using the CRM again.",
+    "pendingDesc": "New accounts are switched on by TECHNO WORLD. Get in touch and we will set you up.",
+    "contact": "Contact on WhatsApp",
+    "signOut": "Sign out"
   }
 }

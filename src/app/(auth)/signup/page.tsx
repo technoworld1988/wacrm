@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MessageSquare, CheckCircle, UsersRound } from "lucide-react";
+import { BrandLogo, SUPPORT_WHATSAPP } from "@/components/brand/brand";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless wrapped in Suspense — same pattern as /login.
@@ -97,6 +98,37 @@ function SignupPageInner() {
     setSuccess(true);
     setLoading(false);
   };
+
+  // Public sign-up is closed: client accounts are created from the
+  // platform admin panel. Only teammates holding an invite link can
+  // register here. (A direct API sign-up still lands in status
+  // 'pending' and is locked out until activated — migration 061.)
+  if (!inviteToken) {
+    return (
+      <div className="brand-aurora-bg flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6 text-center text-[#1B1655] shadow-xl sm:p-8">
+          <div className="mb-5 flex justify-center">
+            <BrandLogo size="lg" />
+          </div>
+          <h1 className="text-xl font-semibold">{t("closedTitle")}</h1>
+          <p className="mt-2 text-sm text-[#55577F]">{t("closedDesc")}</p>
+          <div className="mt-6 flex flex-col gap-3">
+            <a
+              href={SUPPORT_WHATSAPP}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-[#3E6FD6] px-4 text-sm font-semibold text-white hover:bg-[#2C69A7]"
+            >
+              {t("closedContact")}
+            </a>
+            <Link href="/login" className="text-sm text-[#2C69A7] hover:text-[#1B1655]">
+              {t("closedLogin")}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (

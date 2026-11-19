@@ -70,7 +70,12 @@ export default function ResetPasswordPage() {
     }
 
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password });
+    // Clears the "change your temporary password" flag the platform
+    // admin sets when creating a client with a temporary password.
+    const { error } = await supabase.auth.updateUser({
+      password,
+      data: { must_change_password: false },
+    });
     setSaving(false);
 
     if (error) {

@@ -17,6 +17,10 @@ const tablesWithoutDomainData = new Set([
   // Per-device push registrations: cascade-deleted with the account,
   // never business data worth refusing a join over.
   "push_subscriptions",
+  // Platform-operator records about the client account (migration 061),
+  // not data the joining user owns.
+  "platform_client_notes",
+  "platform_admin_activity",
 ]);
 
 function accountScopedTables(): Set<string> {
