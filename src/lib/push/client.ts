@@ -69,6 +69,50 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   }
 }
 
+/**
+ * Show a notification from the page. Android Chrome throws on
+ * `new Notification()` and only allows notifications through a service
+ * worker, so prefer the registration and fall back to the constructor
+ * (desktop browsers without a worker). Returns false when neither works.
+ */
+export async function showLocalNotification(
+  title: string,
+  options: { body?: string; tag?: string; url?: string },
+): Promise<boolean> {
+  if (typeof window === 'undefined' || !('Notification' in window)) return false
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = (await navigator.serviceWorker.getRegistration('/')) ?? (await registerServiceWorker())
+      if (reg) {
+        await reg.showNotification(title, {
+          body: options.body,
+          tag: options.tag,
+          icon: '/icons/icon-192.png',
+          badge: '/icons/badge-96.png',
+          data: { url: options.url ?? '/inbox' },
+        })
+        return true
+      }
+    } catch (err) {
+      console.error('[notify] service worker notification failed:', err)
+    }
+  }
+  try {
+    const n = new Notification(title, { body: options.body, tag: options.tag, icon: '/icon' })
+    if (options.url) {
+      const url = options.url
+      n.onclick = () => {
+        window.focus()
+        window.location.assign(url)
+        n.close()
+      }
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function getCurrentSubscription(): Promise<PushSubscription | null> {
   if (!isPushSupported()) return null
   const reg = await navigator.serviceWorker.getRegistration('/')

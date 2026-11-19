@@ -17,7 +17,7 @@ import {
   viewedConversationFromLocation,
   type NotificationLabels,
 } from "@/lib/notifications/browser-notify";
-import { readPushDeviceFlag } from "@/lib/push/client";
+import { readPushDeviceFlag, showLocalNotification } from "@/lib/push/client";
 
 const serverSnapshot = () => false;
 
@@ -113,10 +113,15 @@ export function useBrowserNotifications(): void {
           router.push(conversationHref(msg.conversation_id));
           notification.close();
         };
-      } catch (err) {
-        // Some browsers throw from the constructor (e.g. Android Chrome
-        // requires a service worker). Non-fatal.
-        console.error("[useBrowserNotifications] failed to show:", err);
+      } catch {
+        // Android Chrome throws from the constructor and only allows
+        // notifications through a service worker — show it that way.
+        const shown = await showLocalNotification(title, {
+          body,
+          tag: msg.conversation_id,
+          url: conversationHref(msg.conversation_id),
+        });
+        if (!shown) console.error("[useBrowserNotifications] failed to show notification");
       }
     };
 
