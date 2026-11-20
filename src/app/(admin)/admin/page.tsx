@@ -15,7 +15,6 @@ import {
   api,
   fieldClass,
   formatDate,
-  planName,
   timeAgo,
 } from "./ui";
 import { RenewDialog } from "./renew-dialog";
@@ -25,6 +24,7 @@ interface Client {
   name: string;
   status: string;
   plan: string | null;
+  planName: string | null;
   planEndsAt: string | null;
   businessPhone: string | null;
   ownerName: string | null;
@@ -186,7 +186,7 @@ export default function AdminDashboardPage() {
                         {c.ownerEmail ?? "—"} · {c.memberCount} {c.memberCount === 1 ? "user" : "users"}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-foreground">{planName(c.plan)}</td>
+                    <td className="px-4 py-3 text-foreground">{c.planName ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {c.whatsappConnected ? "Connected" : "Not connected"}
                     </td>
@@ -231,7 +231,7 @@ export default function AdminDashboardPage() {
                   <StatusBadge bucket={c.bucket} />
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {planName(c.plan)} ·{" "}
+                  {c.planName ?? "—"} ·{" "}
                   {c.isMine
                     ? "own account"
                     : c.planEndsAt

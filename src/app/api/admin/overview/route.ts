@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { toErrorResponse } from "@/lib/auth/account";
 import { requirePlatformAdmin } from "@/lib/platform/admin";
 import { clientBucket } from "@/lib/platform/plans";
+import { loadPlans } from "@/lib/platform/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export async function GET() {
   try {
     const { db, userId } = await requirePlatformAdmin();
 
-    const [accountsRes, profilesRes, waRes, activityRes] = await Promise.all([
+    const [accountsRes, profilesRes, waRes, activityRes, plans] = await Promise.all([
       db
         .from("accounts")
         .select(
@@ -27,7 +28,9 @@ export async function GET() {
         .select("id, account_id, action, details, created_at")
         .order("created_at", { ascending: false })
         .limit(15),
+      loadPlans(db),
     ]);
+    const planNames = new Map(plans.map((p) => [p.key, p.name]));
     for (const r of [accountsRes, profilesRes, waRes, activityRes]) {
       if (r.error) throw r.error;
     }
@@ -49,6 +52,7 @@ export async function GET() {
           name: a.name as string,
           status: a.status as string,
           plan: (a.plan as string | null) ?? null,
+          planName: a.plan ? (planNames.get(a.plan as string) ?? a.plan) : null,
           planEndsAt: (a.plan_ends_at as string | null) ?? null,
           businessPhone: (a.business_phone as string | null) ?? null,
           whiteLabel: Boolean(a.white_label),

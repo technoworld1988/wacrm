@@ -14,6 +14,19 @@
 export type ColorUtility = "bg" | "stroke" | "fill" | "text"
 
 export const chartColors = {
+  // Brand tokens (follow the account's theme / white-label colours).
+  brand: {
+    bg: "bg-primary",
+    stroke: "stroke-primary",
+    fill: "fill-primary",
+    text: "text-primary",
+  },
+  gold: {
+    bg: "bg-[var(--chart-2)]",
+    stroke: "stroke-[var(--chart-2)]",
+    fill: "fill-[var(--chart-2)]",
+    text: "text-[var(--chart-2)]",
+  },
   blue: {
     bg: "bg-blue-500",
     stroke: "stroke-blue-500",

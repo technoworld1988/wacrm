@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { DURATIONS, DURATION_LABELS, type Duration } from "@/lib/platform/plans";
-import { ErrorNote, PrimaryButton, SecondaryButton, api, formatDate, planName } from "./ui";
+import { ErrorNote, PrimaryButton, SecondaryButton, api, formatDate } from "./ui";
 
 export function RenewDialog({
   client,
   onClose,
   onDone,
 }: {
-  client: { id: string; name: string; plan: string | null; planEndsAt: string | null };
+  client: { id: string; name: string; planName: string | null; planEndsAt: string | null };
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -22,7 +22,7 @@ export function RenewDialog({
       <div className="w-full max-w-md rounded-t-2xl bg-card p-5 shadow-xl sm:rounded-2xl">
         <h2 className="text-lg font-semibold text-foreground">Renew {client.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {planName(client.plan)} · currently ends {formatDate(client.planEndsAt)}. Renewing early adds to the current
+          {client.planName ?? "No plan"} · currently ends {formatDate(client.planEndsAt)}. Renewing early adds to the current
           end date.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">

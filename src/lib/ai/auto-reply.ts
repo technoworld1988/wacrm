@@ -13,6 +13,7 @@ import {
 } from '@/lib/flows/meta-send'
 import { sendTypingIndicator } from '@/lib/whatsapp/meta-api'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { hasAiAllowance } from '@/lib/platform/usage'
 
 interface DispatchArgs {
   /** Tenancy key — drives config, contact, and whatsapp_config lookups. */
@@ -111,6 +112,11 @@ export async function dispatchInboundToAiReply(
       )
       return
     }
+
+    // Monthly plan allowance (migration 062). Used up → the bot stays
+    // quiet and the message waits in the inbox for a human; the owner
+    // was already pushed an alert when they hit 100 %.
+    if (!(await hasAiAllowance(db, accountId, 'reply'))) return
 
     // Every gate has passed — we're committed to attempting a reply, so
     // show the customer "typing…" (and mark their message read) while the

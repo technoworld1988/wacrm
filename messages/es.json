@@ -2391,7 +2391,11 @@
       "tokensPerDay": "Tokens por día",
       "byModel": "Por modelo",
       "modelCalls": "{tokens} tok · {count, plural, =1 {# llamada} other {# llamadas}}",
-      "partialWindow": "Se muestra una ventana parcial: el uso es tan alto que aquí solo se resumen los registros más recientes."
+      "partialWindow": "Se muestra una ventana parcial: el uso es tan alto que aquí solo se resumen los registros más recientes.",
+      "allowanceReplies": "AI replies this month",
+      "allowanceTests": "Test chat messages this month",
+      "allowanceUnlimited": "unlimited",
+      "allowanceHint": "Replies include automatic replies and drafts. Test chat has its own allowance, so testing never uses your replies. Both reset on the 1st of every month."
     }
   },
   "Interactive": {
@@ -2799,7 +2803,8 @@
         "loadFailed": "Error al cargar las invitaciones",
         "roleInvalid": "El rol debe ser admin, agent o viewer",
         "labelTooLong": "La etiqueta debe tener {max} caracteres o menos",
-        "createFailed": "Error al crear la invitación"
+        "createFailed": "Error al crear la invitación",
+        "userLimitReached": "Your plan allows {limit} team logins (including pending invites). Ask TECHNO WORLD to upgrade your plan to add more."
       },
       "members": {
         "loadFailed": "Error al cargar los miembros",
@@ -2862,7 +2867,9 @@
         "savedIndexFailed": "Guardado, pero la indexación semántica falló ({message}). La búsqueda por palabras clave sigue funcionando; usa Reindexar para reintentar.",
         "savedNotIndexed": "Guardado, pero la indexación falló ({message}). El documento aún no aparece en las búsquedas; usa Reindexar para reintentar.",
         "savedKeywordOnly": "Guardado solo con búsqueda por palabras clave: no se pudo descifrar tu clave de embeddings (revisa ENCRYPTION_KEY y vuelve a ingresar la clave)."
-      }
+      },
+      "allowanceUsedUp": "This month's AI replies are used up. They reset on the 1st, or ask TECHNO WORLD for a top-up.",
+      "testAllowanceUsedUp": "This month's AI test messages are used up. They reset on the 1st."
     },
     "automations": {
       "copyName": "{name} (Copia)",

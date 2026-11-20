@@ -8,6 +8,9 @@ import { buildSystemPrompt } from '@/lib/ai/defaults'
 import { latestUserMessage } from '@/lib/ai/query'
 import { AiError, type ChatMessage } from '@/lib/ai/types'
 import { getT } from '@/lib/i18n/translate'
+import { supabaseAdmin } from '@/lib/ai/admin-client'
+import { logAiUsage } from '@/lib/ai/usage'
+import { hasAiAllowance } from '@/lib/platform/usage'
 
 const t = getT('Api')
 
@@ -75,6 +78,16 @@ export async function POST(request: Request) {
       )
     }
 
+    // Tests have their own monthly allowance so they never eat the
+    // client's live replies (migration 062).
+    const admin = supabaseAdmin()
+    if (!(await hasAiAllowance(admin, accountId, 'test'))) {
+      return NextResponse.json(
+        { error: t('ai.testAllowanceUsedUp'), code: 'ai_test_allowance_used_up' },
+        { status: 402 },
+      )
+    }
+
     const knowledge = await retrieveKnowledge(
       supabase,
       accountId,
@@ -87,7 +100,15 @@ export async function POST(request: Request) {
       knowledge,
     })
 
-    const { text, handoff } = await generateReply({ config, systemPrompt, messages })
+    const { text, handoff, usage } = await generateReply({ config, systemPrompt, messages })
+    void logAiUsage(admin, {
+      accountId,
+      conversationId: null,
+      mode: 'test',
+      provider: config.provider,
+      model: config.model,
+      usage,
+    })
     return NextResponse.json({ reply: text, handoff })
   } catch (err) {
     if (err instanceof AiError) {

@@ -7,17 +7,29 @@ import {
   clientBucket,
   computeEndDate,
   isDuration,
-  isPlanId,
   normalizeDomain,
   normalizeHex,
+  planLimitColumns,
+  priceFor,
+  discountUsable,
 } from "@/lib/platform/plans";
+import { loadDiscount, loadPlan } from "@/lib/platform/catalog";
+import { getAiAllowance } from "@/lib/platform/usage";
 
 export const dynamic = "force-dynamic";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ACCOUNT_COLS =
-  "id, name, status, plan, plan_ends_at, business_phone, white_label, brand_name, brand_logo_url, brand_primary, brand_accent, brand_domain, created_at";
+  "id, name, status, plan, plan_ends_at, business_phone, white_label, brand_name, brand_logo_url, brand_primary, brand_accent, brand_domain, created_at, limit_users, limit_contacts, limit_ai_replies, ai_test_allowance, discount_id";
+
+/** Non-negative integer, null (= unlimited), or undefined when invalid. */
+function limitValue(v: unknown, min: number): number | null | undefined {
+  if (v === null || v === "") return null;
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+  if (!Number.isInteger(n) || n < min || n > 10_000_000) return undefined;
+  return n;
+}
 
 /** GET /api/admin/clients/[id] — one client with members, note, activity. */
 export async function GET(
@@ -29,7 +41,7 @@ export async function GET(
     const { id } = await params;
     if (!UUID_RE.test(id)) return notFound();
 
-    const [accRes, membersRes, noteRes, waRes, actRes, mineRes] = await Promise.all([
+    const [accRes, membersRes, noteRes, waRes, actRes, mineRes, contactsRes, allowance] = await Promise.all([
       db.from("accounts").select(ACCOUNT_COLS).eq("id", id).maybeSingle(),
       db
         .from("profiles")
@@ -44,10 +56,16 @@ export async function GET(
         .order("created_at", { ascending: false })
         .limit(20),
       db.from("profiles").select("account_id").eq("user_id", userId).maybeSingle(),
+      db.from("contacts").select("id", { count: "exact", head: true }).eq("account_id", id),
+      getAiAllowance(db, id).catch(() => null),
     ]);
     if (accRes.error) throw accRes.error;
     if (!accRes.data) return notFound();
     const a = accRes.data;
+    const [plan, discount] = await Promise.all([
+      a.plan ? loadPlan(db, a.plan as string) : Promise.resolve(null),
+      a.discount_id ? loadDiscount(db, a.discount_id as string) : Promise.resolve(null),
+    ]);
 
     return NextResponse.json({
       client: {
@@ -55,6 +73,17 @@ export async function GET(
         name: a.name,
         status: a.status,
         plan: a.plan,
+        planName: plan?.name ?? null,
+        planIsBonus: plan?.isBonus ?? false,
+        discount,
+        // Amount to collect per period, after this client's discount.
+        pricing: plan
+          ? {
+              "1m": priceFor(plan, "1m", discount),
+              "3m": priceFor(plan, "3m", discount),
+              "12m": priceFor(plan, "12m", discount),
+            }
+          : null,
         planEndsAt: a.plan_ends_at,
         businessPhone: a.business_phone,
         createdAt: a.created_at,
@@ -62,6 +91,12 @@ export async function GET(
         isMine: mineRes.data?.account_id === a.id,
         whatsappConnected: waRes.data?.status === "connected",
         note: noteRes.data?.note ?? "",
+        usage: {
+          users: { used: (membersRes.data ?? []).length, limit: a.limit_users },
+          contacts: { used: contactsRes.count ?? 0, limit: a.limit_contacts },
+          aiReplies: allowance?.replies ?? { used: 0, limit: a.limit_ai_replies },
+          aiTests: allowance?.tests ?? { used: 0, limit: a.ai_test_allowance },
+        },
         branding: {
           whiteLabel: Boolean(a.white_label),
           brandName: a.brand_name,
@@ -112,7 +147,7 @@ export async function PATCH(
 
     const { data: acc, error: accErr } = await db
       .from("accounts")
-      .select("id, status, plan, plan_ends_at")
+      .select("id, status, plan, plan_ends_at, discount_id")
       .eq("id", id)
       .maybeSingle();
     if (accErr) throw accErr;
@@ -131,7 +166,7 @@ export async function PATCH(
     if (action === "renew") {
       if (!isDuration(body?.duration)) return bad("Choose a duration.");
       const plan = body?.plan === undefined ? acc.plan : body.plan;
-      if (plan !== null && !isPlanId(plan)) return bad("Unknown plan.");
+      if (plan !== null && !(await loadPlan(db, plan))) return bad("Unknown plan.");
       const current = acc.plan_ends_at ? new Date(acc.plan_ends_at) : null;
       const endsAt = computeEndDate(body.duration, current);
       const { error } = await db
@@ -174,8 +209,12 @@ export async function PATCH(
         patch.name = name;
       }
       if (body?.plan !== undefined) {
-        if (!isPlanId(body.plan)) return bad("Unknown plan.");
-        patch.plan = body.plan;
+        const newPlan = await loadPlan(db, body.plan);
+        if (!newPlan) return bad("Unknown plan.");
+        patch.plan = newPlan.key;
+        // A plan change resets limits to that plan's defaults; adjust
+        // them afterwards with the "limits" action if needed.
+        if (newPlan.key !== acc.plan) Object.assign(patch, planLimitColumns(newPlan));
       }
       if (body?.businessPhone !== undefined) {
         patch.business_phone =
@@ -196,6 +235,44 @@ export async function PATCH(
         if (error) throw error;
       }
       await log("client_updated", { fields: [...Object.keys(patch), ...(typeof body?.note === "string" ? ["note"] : [])] });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === "discount") {
+      let discountId: string | null = null;
+      if (body?.discountId) {
+        const d = await loadDiscount(db, body.discountId);
+        if (!d) return bad("Discount not found.");
+        // Keeping an existing (now expired) discount is fine; giving a new
+        // one requires it to still be on offer.
+        if (d.id !== acc.discount_id && !discountUsable(d)) return bad("That discount has ended or was switched off.");
+        discountId = d.id;
+      }
+      const { error } = await db.from("accounts").update({ discount_id: discountId }).eq("id", id);
+      if (error) throw error;
+      await log(discountId ? "discount_applied" : "discount_removed", { discountId });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === "limits") {
+      const users = limitValue(body?.users, 1);
+      const contacts = limitValue(body?.contacts, 0);
+      const aiReplies = limitValue(body?.aiReplies, 0);
+      const aiTests = limitValue(body?.aiTests, 0);
+      if ([users, contacts, aiReplies, aiTests].some((v) => v === undefined)) {
+        return bad("Limits must be whole numbers (leave empty for unlimited).");
+      }
+      const { error } = await db
+        .from("accounts")
+        .update({
+          limit_users: users,
+          limit_contacts: contacts,
+          limit_ai_replies: aiReplies,
+          ai_test_allowance: aiTests,
+        })
+        .eq("id", id);
+      if (error) throw error;
+      await log("limits_updated", { users, contacts, aiReplies, aiTests });
       return NextResponse.json({ ok: true });
     }
 

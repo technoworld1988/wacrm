@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PLANS, type ClientBucket, type PlanId, isPlanId } from "@/lib/platform/plans";
+import type { ClientBucket, PlatformDiscount, PlatformPlan } from "@/lib/platform/plans";
 
 // Small presentational pieces shared by the admin pages.
 
@@ -36,8 +36,32 @@ export function StatusBadge({ bucket }: { bucket: ClientBucket }) {
   );
 }
 
-export function planName(plan: string | null): string {
-  return plan && isPlanId(plan) ? PLANS[plan as PlanId].name : "—";
+export type CatalogPlan = PlatformPlan & { clients: number };
+export type CatalogDiscount = PlatformDiscount & { clients: number };
+
+/** Plans + discounts from the admin API, with a reload function. */
+export function useCatalog() {
+  const [plans, setPlans] = useState<CatalogPlan[] | null>(null);
+  const [discounts, setDiscounts] = useState<CatalogDiscount[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
+  const reload = useCallback(() => setVersion((v) => v + 1), []);
+  useEffect(() => {
+    let cancelled = false;
+    api<{ plans: CatalogPlan[]; discounts: CatalogDiscount[] }>("/api/admin/plans")
+      .then((d) => {
+        if (cancelled) return;
+        setPlans(d.plans);
+        setDiscounts(d.discounts);
+      })
+      .catch((e: Error) => {
+        if (!cancelled) setError(e.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [version]);
+  return { plans, discounts, error, reload };
 }
 
 export function formatDate(iso: string | null): string {
@@ -70,6 +94,15 @@ const ACTION_LABEL: Record<string, string> = {
   logo_removed: "Logo removed",
   temp_password_set: "Temporary password created",
   signin_link_created: "Sign-in link created",
+  limits_updated: "Limits changed",
+  plan_created: "Plan created",
+  plan_updated: "Plan edited",
+  plan_deleted: "Plan deleted",
+  discount_created: "Discount created",
+  discount_updated: "Discount edited",
+  discount_deleted: "Discount deleted",
+  discount_applied: "Discount given",
+  discount_removed: "Discount removed",
 };
 export function actionLabel(a: string): string {
   return ACTION_LABEL[a] ?? a.replace(/_/g, " ");

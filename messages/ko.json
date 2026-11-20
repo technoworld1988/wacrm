@@ -2391,7 +2391,11 @@
       "tokensPerDay": "일별 토큰",
       "byModel": "모델별",
       "modelCalls": "{tokens} 토큰 · 호출 {count}회",
-      "partialWindow": "일부 기간만 표시 중 — 사용량이 많아 최근 기록만 요약되었습니다."
+      "partialWindow": "일부 기간만 표시 중 — 사용량이 많아 최근 기록만 요약되었습니다.",
+      "allowanceReplies": "AI replies this month",
+      "allowanceTests": "Test chat messages this month",
+      "allowanceUnlimited": "unlimited",
+      "allowanceHint": "Replies include automatic replies and drafts. Test chat has its own allowance, so testing never uses your replies. Both reset on the 1st of every month."
     }
   },
   "Interactive": {
@@ -2799,7 +2803,8 @@
         "loadFailed": "초대 목록을 불러오지 못했습니다",
         "roleInvalid": "역할은 admin, agent, viewer 중 하나여야 합니다",
         "labelTooLong": "라벨은 {max}자 이하여야 합니다",
-        "createFailed": "초대를 생성하지 못했습니다"
+        "createFailed": "초대를 생성하지 못했습니다",
+        "userLimitReached": "Your plan allows {limit} team logins (including pending invites). Ask TECHNO WORLD to upgrade your plan to add more."
       },
       "members": {
         "loadFailed": "팀원 목록을 불러오지 못했습니다",
@@ -2862,7 +2867,9 @@
         "savedIndexFailed": "저장되었지만 의미 기반 색인에 실패했습니다({message}). 키워드 검색은 계속 작동합니다. 재색인을 사용해 다시 시도하세요.",
         "savedNotIndexed": "저장되었지만 색인에 실패했습니다({message}). 아직 문서를 검색할 수 없습니다. 재색인을 사용해 다시 시도하세요.",
         "savedKeywordOnly": "키워드 검색만으로 저장되었습니다 — 임베딩 키를 복호화할 수 없습니다(ENCRYPTION_KEY를 확인한 후 키를 다시 입력하세요)."
-      }
+      },
+      "allowanceUsedUp": "This month's AI replies are used up. They reset on the 1st, or ask TECHNO WORLD for a top-up.",
+      "testAllowanceUsedUp": "This month's AI test messages are used up. They reset on the 1st."
     },
     "automations": {
       "copyName": "{name} (복사본)",

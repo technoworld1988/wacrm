@@ -2391,7 +2391,11 @@
       "tokensPerDay": "Tokens por dia",
       "byModel": "Por modelo",
       "modelCalls": "{tokens} tok · {count, plural, =1 {# chamada} other {# chamadas}}",
-      "partialWindow": "Exibindo uma janela parcial — o uso é alto o suficiente para que apenas os registros mais recentes sejam resumidos aqui."
+      "partialWindow": "Exibindo uma janela parcial — o uso é alto o suficiente para que apenas os registros mais recentes sejam resumidos aqui.",
+      "allowanceReplies": "AI replies this month",
+      "allowanceTests": "Test chat messages this month",
+      "allowanceUnlimited": "unlimited",
+      "allowanceHint": "Replies include automatic replies and drafts. Test chat has its own allowance, so testing never uses your replies. Both reset on the 1st of every month."
     }
   },
   "Interactive": {
@@ -2799,7 +2803,8 @@
         "loadFailed": "Falha ao carregar os convites",
         "roleInvalid": "A função deve ser admin, agent ou viewer",
         "labelTooLong": "O rótulo deve ter no máximo {max} caracteres",
-        "createFailed": "Falha ao criar o convite"
+        "createFailed": "Falha ao criar o convite",
+        "userLimitReached": "Your plan allows {limit} team logins (including pending invites). Ask TECHNO WORLD to upgrade your plan to add more."
       },
       "members": {
         "loadFailed": "Falha ao carregar os membros",
@@ -2862,7 +2867,9 @@
         "savedIndexFailed": "Salvo, mas a indexação semântica falhou ({message}). A busca por palavras-chave continua funcionando; use Reindexar para tentar novamente.",
         "savedNotIndexed": "Salvo, mas a indexação falhou ({message}). O documento ainda não pode ser encontrado na busca; use Reindexar para tentar novamente.",
         "savedKeywordOnly": "Salvo apenas com busca por palavras-chave — não foi possível descriptografar sua chave de embeddings (verifique a ENCRYPTION_KEY e informe a chave novamente)."
-      }
+      },
+      "allowanceUsedUp": "This month's AI replies are used up. They reset on the 1st, or ask TECHNO WORLD for a top-up.",
+      "testAllowanceUsedUp": "This month's AI test messages are used up. They reset on the 1st."
     },
     "automations": {
       "copyName": "{name} (Cópia)",

@@ -3,6 +3,8 @@ import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { resolveTimeZone, zonedDayKey, zonedDayStart, zonedLastNDayKeys } from '@/lib/ai/usage-days'
 import { fetchPagesUpTo } from '@/lib/supabase/paged-query'
 import { getT } from '@/lib/i18n/translate'
+import { supabaseAdmin } from '@/lib/ai/admin-client'
+import { getAiAllowance, type AiAllowance } from '@/lib/platform/usage'
 
 const t = getT('Api')
 
@@ -16,7 +18,7 @@ const DEFAULT_WINDOW_DAYS = 30
 
 interface UsageRow {
   created_at: string
-  mode: 'auto_reply' | 'draft'
+  mode: 'auto_reply' | 'draft' | 'test'
   provider: string
   model: string
   prompt_tokens: number
@@ -87,6 +89,7 @@ export async function GET(request: Request) {
     const byMode = {
       auto_reply: { calls: 0, tokens: 0 },
       draft: { calls: 0, tokens: 0 },
+      test: { calls: 0, tokens: 0 },
     }
     const modelMap = new Map<
       string,
@@ -126,7 +129,17 @@ export async function GET(request: Request) {
 
     const byModel = [...modelMap.values()].sort((a, b) => b.tokens - a.tokens)
 
+    // This month's plan allowance (migration 062). Best-effort: the
+    // token summary still renders if it can't be read.
+    let allowance: AiAllowance | null = null
+    try {
+      allowance = await getAiAllowance(supabaseAdmin(), accountId)
+    } catch (err) {
+      console.error('[ai/usage GET] allowance skipped:', err)
+    }
+
     return NextResponse.json({
+      allowance,
       window_days: days,
       time_zone: timeZone,
       truncated,

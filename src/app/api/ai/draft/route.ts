@@ -8,6 +8,7 @@ import { generateReply } from '@/lib/ai/generate'
 import { buildSystemPrompt } from '@/lib/ai/defaults'
 import { latestUserMessage } from '@/lib/ai/query'
 import { logAiUsage } from '@/lib/ai/usage'
+import { hasAiAllowance } from '@/lib/platform/usage'
 import { supabaseAdmin } from '@/lib/ai/admin-client'
 import { AiError } from '@/lib/ai/types'
 import { getT } from '@/lib/i18n/translate'
@@ -76,6 +77,13 @@ export async function POST(request: Request) {
           code: 'ai_not_configured',
         },
         { status: 400 },
+      )
+    }
+
+    if (!(await hasAiAllowance(supabaseAdmin(), accountId, 'reply'))) {
+      return NextResponse.json(
+        { error: t('ai.allowanceUsedUp'), code: 'ai_allowance_used_up' },
+        { status: 402 },
       )
     }
 

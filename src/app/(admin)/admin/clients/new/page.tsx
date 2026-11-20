@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils";
 import {
   DURATIONS,
   DURATION_LABELS,
-  PLANS,
-  PLAN_IDS,
   computeEndDate,
+  discountLabel,
+  discountUsable,
+  inr,
+  priceFor,
   type Duration,
-  type PlanId,
 } from "@/lib/platform/plans";
 import {
   CopyButton,
@@ -22,6 +23,7 @@ import {
   api,
   fieldClass,
   formatDate,
+  useCatalog,
   whatsappLink,
 } from "../../ui";
 
@@ -33,24 +35,26 @@ interface Created {
   planEndsAt: string;
 }
 
-function inr(n: number | null) {
-  return n === null ? "—" : `₹${n.toLocaleString("en-IN")}`;
-}
-
 export default function AddClientPage() {
   const [businessName, setBusinessName] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [access, setAccess] = useState<"invite" | "password">("invite");
-  const [plan, setPlan] = useState<PlanId>("pro");
+  const [plan, setPlan] = useState<string>("pro");
+  const [discountId, setDiscountId] = useState<string>("");
   const [duration, setDuration] = useState<Duration>("1m");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
 
-  const meta = PLANS[plan];
+  const { plans, discounts } = useCatalog();
+  const activePlans = (plans ?? []).filter((p) => p.isActive);
+  const meta = activePlans.find((p) => p.key === plan) ?? activePlans[0] ?? null;
+  const offers = (discounts ?? []).filter((d) => discountUsable(d));
+  const discount = offers.find((d) => d.id === discountId) ?? null;
+  const price = meta ? priceFor(meta, duration, discount) : null;
 
   if (created) {
     const signIn = typeof window !== "undefined" ? `${window.location.origin}/login` : "/login";
@@ -107,7 +111,17 @@ export default function AddClientPage() {
     try {
       const res = await api<Created>("/api/admin/clients", {
         method: "POST",
-        body: JSON.stringify({ businessName, businessPhone, ownerName, ownerEmail, access, plan, duration, note }),
+        body: JSON.stringify({
+          businessName,
+          businessPhone,
+          ownerName,
+          ownerEmail,
+          access,
+          plan: meta?.key,
+          duration,
+          note,
+          discountId: discountId || null,
+        }),
       });
       setCreated(res);
     } catch (err) {
@@ -179,12 +193,35 @@ export default function AddClientPage() {
           <Panel title="Plan & billing">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Plan">
-                <select value={plan} onChange={(e) => setPlan(e.target.value as PlanId)} className={fieldClass}>
-                  {PLAN_IDS.map((p) => (
-                    <option key={p} value={p}>
-                      {PLANS[p].name}
-                    </option>
-                  ))}
+                <select
+                  value={meta?.key ?? ""}
+                  onChange={(e) => {
+                    setPlan(e.target.value);
+                    const next = activePlans.find((p) => p.key === e.target.value);
+                    if (next) setDuration(next.defaultDuration);
+                  }}
+                  className={fieldClass}
+                  disabled={!plans}
+                >
+                  {!plans && <option>Loading…</option>}
+                  {activePlans.filter((p) => !p.isBonus).length > 0 && (
+                    <optgroup label="Plans">
+                      {activePlans.filter((p) => !p.isBonus).map((p) => (
+                        <option key={p.key} value={p.key}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {activePlans.some((p) => p.isBonus) && (
+                    <optgroup label="Bonus (free with a service)">
+                      {activePlans.filter((p) => p.isBonus).map((p) => (
+                        <option key={p.key} value={p.key}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </Field>
               <Field label="Duration">
@@ -200,6 +237,41 @@ export default function AddClientPage() {
                 <input readOnly value={formatDate(computeEndDate(duration, null).toISOString())} className={cn(fieldClass, "bg-muted text-muted-foreground")} />
               </Field>
             </div>
+            {!meta?.isBonus && (
+              <div className="mt-4">
+                <Field label="Discount (optional)" hint={offers.length === 0 ? "No discounts on offer. Create one in Discounts." : undefined}>
+                  <select value={discountId} onChange={(e) => setDiscountId(e.target.value)} className={fieldClass}>
+                    <option value="">No discount</option>
+                    {offers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} · {discountLabel(d)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            )}
+            {price && (
+              <div className="mt-4 rounded-xl border border-border bg-card-2 p-3 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{meta?.isBonus ? "Bonus plan" : `Price (${DURATION_LABELS[duration]})`}</span>
+                  <span>{inr(price.base)}</span>
+                </div>
+                {price.discount > 0 && (
+                  <div className="mt-1 flex justify-between text-emerald-700 dark:text-emerald-300">
+                    <span>{discount?.name}</span>
+                    <span>−{inr(price.discount)}</span>
+                  </div>
+                )}
+                <div className="mt-2 flex justify-between border-t border-border pt-2 font-semibold text-foreground">
+                  <span>To collect (before GST)</span>
+                  <span>{inr(price.total)}</span>
+                </div>
+              </div>
+            )}
+            {meta && !price && (
+              <p className="mt-4 text-sm text-muted-foreground">This plan has no price set. Quote the client yourself.</p>
+            )}
             <div className="mt-4">
               <Field label="Private note (only you see it)">
                 <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="e.g. Setup ₹25,000 paid by UPI" className={cn(fieldClass, "h-auto py-2.5")} />
@@ -219,24 +291,35 @@ export default function AddClientPage() {
         </form>
 
         <aside className="brand-aurora-bg rounded-2xl p-5 text-white lg:sticky lg:top-4">
-          <h2 className="text-base font-semibold text-[#F0CF86]">What {meta.name} includes</h2>
-          <dl className="mt-4 grid grid-cols-[1.3fr_1fr] gap-x-3 gap-y-2.5 text-sm">
-            <dt className="text-[#DCE0F6]">Price</dt>
-            <dd>
-              {inr(meta.monthlyInr)}/mo{meta.yearlyInr ? ` · ${inr(meta.yearlyInr)}/yr` : ""}
-            </dd>
-            <dt className="text-[#DCE0F6]">Team logins</dt>
-            <dd>{meta.limits.users ?? "As agreed"}</dd>
-            <dt className="text-[#DCE0F6]">WhatsApp numbers</dt>
-            <dd>{meta.limits.numbers}</dd>
-            <dt className="text-[#DCE0F6]">Contacts</dt>
-            <dd>{meta.limits.contacts?.toLocaleString("en-IN") ?? "Unlimited"}</dd>
-            <dt className="text-[#DCE0F6]">AI replies / month</dt>
-            <dd>{meta.limits.aiReplies.toLocaleString("en-IN")}</dd>
-          </dl>
-          <p className="mt-4 border-t border-white/15 pt-3 text-xs text-[#DCE0F6]">
-            Prices before GST. Plan limits are shown for reference and will be enforced in a later update.
-          </p>
+          {meta ? (
+            <>
+              <h2 className="text-base font-semibold text-[#F0CF86]">What {meta.name} includes</h2>
+              {meta.description && <p className="mt-1 text-sm text-[#DCE0F6]">{meta.description}</p>}
+              <dl className="mt-4 grid grid-cols-[1.3fr_1fr] gap-x-3 gap-y-2.5 text-sm">
+                <dt className="text-[#DCE0F6]">Price</dt>
+                <dd>
+                  {meta.isBonus
+                    ? "Free (bonus)"
+                    : `${inr(meta.monthlyPrice)}/mo${meta.yearlyPrice ? ` · ${inr(meta.yearlyPrice)}/yr` : ""}`}
+                </dd>
+                <dt className="text-[#DCE0F6]">Team logins</dt>
+                <dd>{meta.limits.users ?? "Unlimited"}</dd>
+                <dt className="text-[#DCE0F6]">WhatsApp numbers</dt>
+                <dd>{meta.limits.numbers}</dd>
+                <dt className="text-[#DCE0F6]">Contacts</dt>
+                <dd>{meta.limits.contacts?.toLocaleString("en-IN") ?? "Unlimited"}</dd>
+                <dt className="text-[#DCE0F6]">AI replies / month</dt>
+                <dd>{meta.limits.aiReplies?.toLocaleString("en-IN") ?? "Unlimited"}</dd>
+                <dt className="text-[#DCE0F6]">AI test messages / month</dt>
+                <dd>{meta.limits.aiTests?.toLocaleString("en-IN") ?? "Unlimited"}</dd>
+              </dl>
+              <p className="mt-4 border-t border-white/15 pt-3 text-xs text-[#DCE0F6]">
+                Prices before GST. You can change any limit for this client later from their page.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-[#DCE0F6]">Loading plans…</p>
+          )}
         </aside>
       </div>
     </div>

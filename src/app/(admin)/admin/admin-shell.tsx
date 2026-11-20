@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, Menu, MessageSquare, UserPlus, X } from "lucide-react";
+import { BadgePercent, LayoutDashboard, LogOut, Menu, MessageSquare, Package, UserPlus, X } from "lucide-react";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { BrandLogo } from "@/components/brand/brand";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/clients/new", label: "Add client", icon: UserPlus },
+  { href: "/admin/plans", label: "Plans", icon: Package },
+  { href: "/admin/discounts", label: "Discounts", icon: BadgePercent },
 ];
 
 function Nav({ onNavigate }: { onNavigate?: () => void }) {

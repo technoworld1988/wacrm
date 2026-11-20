@@ -217,6 +217,35 @@ export async function POST(request: Request) {
       label = trimmed === "" ? null : trimmed;
     }
 
+    // Plan limit on team logins (migration 062): members + invites
+    // still waiting to be used. NULL limit = unlimited.
+    const { data: acct } = await ctx.supabase
+      .from("accounts")
+      .select("limit_users")
+      .eq("id", ctx.accountId)
+      .maybeSingle();
+    const userLimit = (acct?.limit_users as number | null | undefined) ?? null;
+    if (userLimit !== null) {
+      const [members, pending] = await Promise.all([
+        ctx.supabase
+          .from("profiles")
+          .select("user_id", { count: "exact", head: true })
+          .eq("account_id", ctx.accountId),
+        ctx.supabase
+          .from("account_invitations")
+          .select("id", { count: "exact", head: true })
+          .eq("account_id", ctx.accountId)
+          .is("accepted_at", null)
+          .gt("expires_at", new Date().toISOString()),
+      ]);
+      if ((members.count ?? 0) + (pending.count ?? 0) >= userLimit) {
+        return NextResponse.json(
+          { error: t("account.invitations.userLimitReached", { limit: userLimit }), code: "user_limit_reached" },
+          { status: 402 },
+        );
+      }
+    }
+
     const { token, hash } = generateInviteToken();
 
     const { data, error } = await ctx.supabase

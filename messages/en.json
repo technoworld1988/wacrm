@@ -2391,7 +2391,11 @@
       "tokensPerDay": "Tokens per day",
       "byModel": "By model",
       "modelCalls": "{tokens} tok · {count, plural, =1 {# call} other {# calls}}",
-      "partialWindow": "Showing a partial window — usage is high enough that only the most recent records are summarized here."
+      "partialWindow": "Showing a partial window — usage is high enough that only the most recent records are summarized here.",
+      "allowanceReplies": "AI replies this month",
+      "allowanceTests": "Test chat messages this month",
+      "allowanceUnlimited": "unlimited",
+      "allowanceHint": "Replies include automatic replies and drafts. Test chat has its own allowance, so testing never uses your replies. Both reset on the 1st of every month."
     }
   },
   "Interactive": {
@@ -2799,7 +2803,8 @@
         "loadFailed": "Failed to load invitations",
         "roleInvalid": "'role' must be one of admin, agent, viewer",
         "labelTooLong": "Label must be {max} characters or fewer",
-        "createFailed": "Failed to create invitation"
+        "createFailed": "Failed to create invitation",
+        "userLimitReached": "Your plan allows {limit} team logins (including pending invites). Ask TECHNO WORLD to upgrade your plan to add more."
       },
       "members": {
         "loadFailed": "Failed to load members",
@@ -2862,7 +2867,9 @@
         "savedIndexFailed": "Saved, but semantic indexing failed ({message}). Lexical search still works; use Reindex to retry.",
         "savedNotIndexed": "Saved, but indexing failed ({message}). The document is not searchable yet; use Reindex to retry.",
         "savedKeywordOnly": "Saved with keyword search only — your embeddings key could not be decrypted (check ENCRYPTION_KEY, then re-enter the key)."
-      }
+      },
+      "allowanceUsedUp": "This month's AI replies are used up. They reset on the 1st, or ask TECHNO WORLD for a top-up.",
+      "testAllowanceUsedUp": "This month's AI test messages are used up. They reset on the 1st."
     },
     "automations": {
       "copyName": "{name} (Copy)",

@@ -25,7 +25,17 @@ import { BarChart } from '@/components/tremor/bar-chart';
 import { formatCompactNumber } from '@/lib/currency';
 import { format, parseISO } from 'date-fns';
 
+interface AllowanceBucket {
+  used: number;
+  limit: number | null;
+}
+
 interface UsageResponse {
+  allowance?: {
+    replies: AllowanceBucket;
+    tests: AllowanceBucket;
+    periodStart: string;
+  } | null;
   window_days: number;
   truncated: boolean;
   totals: {
@@ -140,6 +150,21 @@ export function AiUsageCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
+        {data?.allowance && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <AllowanceMeter
+              label={t('allowanceReplies')}
+              bucket={data.allowance.replies}
+              unlimited={t('allowanceUnlimited')}
+            />
+            <AllowanceMeter
+              label={t('allowanceTests')}
+              bucket={data.allowance.tests}
+              unlimited={t('allowanceUnlimited')}
+            />
+            <p className="text-xs text-muted-foreground sm:col-span-2">{t('allowanceHint')}</p>
+          </div>
+        )}
         {loading || !data ? (
           <Skeleton className="h-[220px] w-full" />
         ) : !hasSpend ? (
@@ -175,7 +200,7 @@ export function AiUsageCard() {
                 data={chartData}
                 index="day"
                 categories={[tokensLabel]}
-                colors={['violet']}
+                colors={['brand']}
                 valueFormatter={(v) => formatCompactNumber(v)}
                 showLegend={false}
                 yAxisWidth={48}
@@ -242,6 +267,47 @@ function Stat({
       <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
         {value}
       </p>
+    </div>
+  );
+}
+
+/** This month's used / allowed bar; gold from 80 %, red when used up. */
+function AllowanceMeter({
+  label,
+  bucket,
+  unlimited,
+}: {
+  label: string;
+  bucket: AllowanceBucket;
+  unlimited: string;
+}) {
+  const pct =
+    bucket.limit && bucket.limit > 0
+      ? Math.min(100, Math.round((bucket.used / bucket.limit) * 100))
+      : 0;
+  const tone =
+    bucket.limit === null
+      ? 'bg-primary'
+      : pct >= 100
+        ? 'bg-red-500'
+        : pct >= 80
+          ? 'bg-[var(--chart-2)]'
+          : 'bg-primary';
+  return (
+    <div className="rounded-lg border border-border bg-card-2 p-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-sm font-semibold text-foreground">
+          {bucket.used.toLocaleString()}
+          {bucket.limit === null ? ` · ${unlimited}` : ` / ${bucket.limit.toLocaleString()}`}
+        </span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className={`h-full rounded-full ${tone}`}
+          style={{ width: bucket.limit === null ? '0%' : `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }

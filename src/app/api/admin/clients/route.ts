@@ -8,7 +8,8 @@ import {
   requirePlatformAdmin,
   signInLink,
 } from "@/lib/platform/admin";
-import { computeEndDate, isDuration, isPlanId } from "@/lib/platform/plans";
+import { computeEndDate, discountUsable, isDuration, planLimitColumns } from "@/lib/platform/plans";
+import { loadDiscount, loadPlan } from "@/lib/platform/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -43,14 +44,20 @@ export async function POST(request: Request) {
     const ownerEmail = str(body?.ownerEmail, 254).toLowerCase();
     const access = body?.access === "password" ? "password" : "invite";
     const note = str(body?.note, 2000);
-    const plan = body?.plan;
     const duration = body?.duration;
 
     if (!businessName) return bad("Business name is required.");
     if (!ownerName) return bad("Owner name is required.");
     if (!EMAIL_RE.test(ownerEmail)) return bad("Enter a valid owner email.");
-    if (!isPlanId(plan)) return bad("Choose a plan.");
     if (!isDuration(duration)) return bad("Choose a duration.");
+    const plan = await loadPlan(db, typeof body?.plan === "string" ? body.plan : "");
+    if (!plan || !plan.isActive) return bad("Choose a plan.");
+    let discountId: string | null = null;
+    if (body?.discountId) {
+      const d = await loadDiscount(db, body.discountId);
+      if (!d || !discountUsable(d)) return bad("That discount has ended or was switched off.");
+      discountId = d.id;
+    }
 
     let newUserId: string;
     let link: string | null = null;
@@ -97,7 +104,9 @@ export async function POST(request: Request) {
       .update({
         name: businessName,
         business_phone: businessPhone,
-        plan,
+        plan: plan.key,
+        discount_id: discountId,
+        ...planLimitColumns(plan),
         status: duration === "trial14" ? "trial" : "active",
         plan_ends_at: endsAt.toISOString(),
         renewal_reminded_at: null,
@@ -115,7 +124,7 @@ export async function POST(request: Request) {
       actorUserId: userId,
       accountId,
       action: "client_created",
-      details: { plan, duration, access, ownerEmail },
+      details: { plan: plan.key, duration, access, ownerEmail, discountId },
     });
 
     return NextResponse.json({

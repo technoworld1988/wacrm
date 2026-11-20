@@ -5,7 +5,15 @@ import { use, useCallback, useEffect, useState } from "react";
 import { ArrowLeft, KeyRound, Link2, MessageCircle, Pause, Play, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand/brand";
-import { PLANS, PLAN_IDS, daysLeft, type ClientBucket, type PlanId } from "@/lib/platform/plans";
+import {
+  daysLeft,
+  discountLabel,
+  discountUsable,
+  inr,
+  type ClientBucket,
+  type PlatformDiscount,
+  type PriceBreakdown,
+} from "@/lib/platform/plans";
 import {
   CopyButton,
   ErrorNote,
@@ -18,7 +26,7 @@ import {
   api,
   fieldClass,
   formatDate,
-  planName,
+  useCatalog,
   timeAgo,
   whatsappLink,
 } from "../../ui";
@@ -30,6 +38,10 @@ interface Detail {
     name: string;
     status: string;
     plan: string | null;
+    planName: string | null;
+    planIsBonus: boolean;
+    discount: PlatformDiscount | null;
+    pricing: Record<"1m" | "3m" | "12m", PriceBreakdown | null> | null;
     planEndsAt: string | null;
     businessPhone: string | null;
     createdAt: string;
@@ -37,6 +49,7 @@ interface Detail {
     isMine: boolean;
     whatsappConnected: boolean;
     note: string;
+    usage: Record<"users" | "contacts" | "aiReplies" | "aiTests", { used: number; limit: number | null }>;
     branding: {
       whiteLabel: boolean;
       brandName: string | null;
@@ -92,7 +105,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           <StatusBadge bucket={c.bucket} />
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          {planName(c.plan)} ·{" "}
+          {c.planName ?? "No plan"} ·{" "}
           {c.isMine
             ? "your own account"
             : c.planEndsAt
@@ -105,6 +118,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
       <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
         <div className="flex flex-col gap-5">
           <PlanPanel detail={data} onChanged={load} onRenew={() => setRenewing(true)} />
+          <UsagePanel key={JSON.stringify(c.usage)} detail={data} onChanged={load} />
           {!c.isMine && <AccessPanel clientId={c.id} phone={c.businessPhone} name={c.name} />}
           <DetailsPanel detail={data} onChanged={load} />
         </div>
@@ -141,7 +155,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
       {renewing && (
         <RenewDialog
-          client={{ id: c.id, name: c.name, plan: c.plan, planEndsAt: c.planEndsAt }}
+          client={{ id: c.id, name: c.name, planName: c.planName, planEndsAt: c.planEndsAt }}
           onClose={() => setRenewing(false)}
           onDone={() => {
             setRenewing(false);
@@ -171,7 +185,9 @@ function PlanPanel({
   onRenew: () => void;
 }) {
   const c = detail.client;
-  const [plan, setPlan] = useState<PlanId>((c.plan as PlanId) ?? "pro");
+  const { plans, discounts } = useCatalog();
+  const [plan, setPlan] = useState<string>(c.plan ?? "");
+  const [discountId, setDiscountId] = useState<string>(c.discount?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -189,6 +205,16 @@ function PlanPanel({
     }
   };
   const blocked = c.bucket === "paused" || c.bucket === "pending";
+  // The plan picker lists active plans plus the client's current one.
+  const planOptions = (plans ?? []).filter((p) => p.isActive || p.key === c.plan);
+  const discountOptions = (discounts ?? []).filter((d) => discountUsable(d) || d.id === c.discount?.id);
+  const month = c.pricing?.["1m"] ?? null;
+
+  const reminder = month
+    ? `Hello, your WhatsApp CRM plan (${c.planName}) for ${c.name} ${
+        c.planEndsAt ? `ends on ${formatDate(c.planEndsAt)}` : "is due for renewal"
+      }.\n\nRenewal: ${inr(month.total)} per month${month.discount > 0 ? ` (after your ${inr(month.discount)} discount)` : ""} + GST.\n\nReply here to renew so your bot and inbox keep running without a break.\n\n— TECHNO WORLD`
+    : null;
 
   return (
     <Panel title="Plan & billing">
@@ -196,19 +222,81 @@ function PlanPanel({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex-1">
             <Field label="Plan">
-              <select value={plan} onChange={(e) => setPlan(e.target.value as PlanId)} className={fieldClass}>
-                {PLAN_IDS.map((p) => (
-                  <option key={p} value={p}>
-                    {PLANS[p].name}
+              <select value={plan} onChange={(e) => setPlan(e.target.value)} className={fieldClass} disabled={!plans}>
+                {!c.plan && <option value="">No plan</option>}
+                {planOptions.map((p) => (
+                  <option key={p.key} value={p.key}>
+                    {p.name}
+                    {p.isBonus ? " (bonus)" : ""}
+                    {!p.isActive ? " (hidden)" : ""}
                   </option>
                 ))}
               </select>
             </Field>
           </div>
-          <SecondaryButton type="button" disabled={busy || plan === c.plan} onClick={() => act({ action: "update", plan })}>
+          <SecondaryButton
+            type="button"
+            disabled={busy || !plan || plan === c.plan}
+            onClick={() =>
+              act({ action: "update", plan }, "Change plan? The client's limits will reset to the new plan's limits.")
+            }
+          >
             Change plan
           </SecondaryButton>
         </div>
+
+        {!c.planIsBonus && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Field label="Discount">
+                <select value={discountId} onChange={(e) => setDiscountId(e.target.value)} className={fieldClass} disabled={!discounts}>
+                  <option value="">No discount</option>
+                  {discountOptions.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name} · {discountLabel(d)}
+                      {!discountUsable(d) ? " (ended)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <SecondaryButton
+              type="button"
+              disabled={busy || discountId === (c.discount?.id ?? "")}
+              onClick={() => act({ action: "discount", discountId: discountId || null })}
+            >
+              {discountId ? "Apply" : "Remove"}
+            </SecondaryButton>
+          </div>
+        )}
+
+        {c.pricing && (
+          <div className="rounded-xl border border-border bg-card-2 p-3 text-sm">
+            {c.planIsBonus ? (
+              <p className="text-foreground">Bonus plan: free. Renew it for free or move them to a paid plan when it ends.</p>
+            ) : (
+              <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+                {(["1m", "3m", "12m"] as const).map((d) =>
+                  c.pricing?.[d] ? (
+                    <div key={d} className="contents">
+                      <dt className="text-muted-foreground">
+                        {d === "1m" ? "1 month" : d === "3m" ? "3 months" : "12 months"}
+                        {c.pricing[d]!.discount > 0 && (
+                          <span className="ml-1 text-xs">
+                            ({inr(c.pricing[d]!.base)} − {inr(c.pricing[d]!.discount)})
+                          </span>
+                        )}
+                      </dt>
+                      <dd className="text-right font-semibold text-foreground">{inr(c.pricing[d]!.total)}</dd>
+                    </div>
+                  ) : null,
+                )}
+                <dt className="col-span-2 mt-1 text-xs text-muted-foreground">Amounts to collect, before GST.</dt>
+              </dl>
+            )}
+          </div>
+        )}
+
         <ErrorNote message={error} />
         {!c.isMine && (
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -235,6 +323,16 @@ function PlanPanel({
               </SecondaryButton>
             )}
           </div>
+        )}
+        {!c.isMine && reminder && !c.planIsBonus && (
+          <a
+            href={whatsappLink(c.businessPhone, reminder)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#16A34A]/40 px-4 text-sm font-medium text-[#15803D] hover:bg-[#16A34A]/10 dark:text-emerald-300"
+          >
+            <MessageCircle className="h-4 w-4" /> Send renewal reminder on WhatsApp
+          </a>
         )}
       </div>
     </Panel>
@@ -475,6 +573,116 @@ function BrandingPanel({ detail, onChanged }: { detail: Detail; onChanged: () =>
         </PrimaryButton>
         {saved && <span className="text-sm text-emerald-700 dark:text-emerald-300">Saved</span>}
       </div>
+    </Panel>
+  );
+}
+
+const USAGE_ROWS: { key: "users" | "contacts" | "aiReplies" | "aiTests"; label: string; min: number }[] = [
+  { key: "users", label: "Team logins", min: 1 },
+  { key: "contacts", label: "Contacts", min: 0 },
+  { key: "aiReplies", label: "AI replies this month", min: 0 },
+  { key: "aiTests", label: "AI test messages this month", min: 0 },
+];
+
+function UsagePanel({ detail, onChanged }: { detail: Detail; onChanged: () => void }) {
+  const c = detail.client;
+  const [editing, setEditing] = useState(false);
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      USAGE_ROWS.map((r) => [r.key, c.usage[r.key].limit === null ? "" : String(c.usage[r.key].limit)]),
+    ),
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <Panel
+      title="Usage & limits"
+      actions={
+        !editing ? (
+          <button type="button" onClick={() => setEditing(true)} className="text-sm font-medium text-primary hover:underline">
+            Change limits
+          </button>
+        ) : null
+      }
+    >
+      <ul className="flex flex-col gap-3">
+        {USAGE_ROWS.map((r) => {
+          const u = c.usage[r.key];
+          const pct = u.limit ? Math.min(100, Math.round((u.used / u.limit) * 100)) : 0;
+          const tone = u.limit === null ? "bg-primary" : pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-[#E0A93A]" : "bg-primary";
+          return (
+            <li key={r.key}>
+              <div className="flex items-baseline justify-between gap-2 text-sm">
+                <span className="text-muted-foreground">{r.label}</span>
+                {editing ? (
+                  <input
+                    inputMode="numeric"
+                    value={values[r.key]}
+                    onChange={(e) => setValues((v) => ({ ...v, [r.key]: e.target.value.replace(/[^0-9]/g, "") }))}
+                    placeholder="Unlimited"
+                    aria-label={`${r.label} limit`}
+                    className={cn(fieldClass, "h-9 w-32 text-right")}
+                  />
+                ) : (
+                  <span className="font-semibold text-foreground">
+                    {u.used.toLocaleString("en-IN")} / {u.limit === null ? "unlimited" : u.limit.toLocaleString("en-IN")}
+                  </span>
+                )}
+              </div>
+              {!editing && (
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+                  <div className={cn("h-full rounded-full", tone)} style={{ width: u.limit === null ? "0%" : `${pct}%` }} />
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {editing && (
+        <div className="mt-4 flex flex-col gap-3">
+          <p className="text-xs text-muted-foreground">
+            Leave a box empty for unlimited. Selling an AI top-up? Raise &ldquo;AI replies this month&rdquo; (e.g. +1,000 for ₹499);
+            set it back next month. Changing the plan resets these to the plan&apos;s defaults.
+          </p>
+          <ErrorNote message={error} />
+          <div className="flex gap-2">
+            <SecondaryButton type="button" className="flex-1" disabled={busy} onClick={() => setEditing(false)}>
+              Cancel
+            </SecondaryButton>
+            <PrimaryButton
+              type="button"
+              className="flex-1"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError(null);
+                try {
+                  const num = (k: string) => (values[k] === "" ? null : Number(values[k]));
+                  await api(`/api/admin/clients/${c.id}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      action: "limits",
+                      users: num("users"),
+                      contacts: num("contacts"),
+                      aiReplies: num("aiReplies"),
+                      aiTests: num("aiTests"),
+                    }),
+                  });
+                  setEditing(false);
+                  onChanged();
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Saving…" : "Save limits"}
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
     </Panel>
   );
 }

@@ -1,12 +1,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AiProvider, AiUsage } from './types'
+import { maybeAlertAiUsage } from '@/lib/platform/usage'
 
 export interface LogAiUsageArgs {
   accountId: string
   /** Null for a draft not tied to one thread, or when the row was
    *  deleted between generation and logging. */
   conversationId: string | null
-  mode: 'auto_reply' | 'draft'
+  /** 'test' = AI test chat (playground); counted apart from replies. */
+  mode: 'auto_reply' | 'draft' | 'test'
   provider: AiProvider
   model: string
   /** Provider usage; a no-op when null (nothing worth recording). */
@@ -44,7 +46,10 @@ export async function logAiUsage(
     })
     if (error) {
       console.error('[ai usage] log insert failed:', error)
+      return
     }
+    // Plan allowance alerts (80 % / 100 %) — replies only.
+    if (args.mode !== 'test') await maybeAlertAiUsage(db, args.accountId)
   } catch (err) {
     console.error('[ai usage] log insert threw:', err)
   }

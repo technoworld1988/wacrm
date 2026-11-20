@@ -1,64 +1,20 @@
 // ============================================================
-// Platform plans + account access rules.
+// Platform plans, discounts + account access rules.
+//
+// The plan catalogue lives in `platform_plans` (migration 063) so the
+// operator can create their own; this module holds the pure helpers
+// that shape and price those rows.
 //
 // Pure module (no DB, no Next imports) so the admin API routes, the
 // client shell and the expiry cron share one definition of "is this
 // client allowed in?" and "when does a renewal end?".
 // ============================================================
 
-export const PLAN_IDS = ["starter", "pro", "ultra", "custom"] as const;
-export type PlanId = (typeof PLAN_IDS)[number];
-
 export const ACCOUNT_STATUSES = ["active", "trial", "paused", "pending"] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
 export const DURATIONS = ["trial14", "1m", "3m", "12m"] as const;
 export type Duration = (typeof DURATIONS)[number];
-
-export interface PlanMeta {
-  id: PlanId;
-  name: string;
-  /** Monthly price in INR, before GST. Null for custom quotes. */
-  monthlyInr: number | null;
-  yearlyInr: number | null;
-  limits: {
-    users: number | null;
-    numbers: number;
-    contacts: number | null;
-    aiReplies: number;
-  };
-}
-
-export const PLANS: Record<PlanId, PlanMeta> = {
-  starter: {
-    id: "starter",
-    name: "Starter",
-    monthlyInr: 1199,
-    yearlyInr: 9999,
-    limits: { users: 2, numbers: 1, contacts: 5000, aiReplies: 300 },
-  },
-  pro: {
-    id: "pro",
-    name: "Pro",
-    monthlyInr: 2799,
-    yearlyInr: 26999,
-    limits: { users: 6, numbers: 1, contacts: 50000, aiReplies: 1000 },
-  },
-  ultra: {
-    id: "ultra",
-    name: "Ultra",
-    monthlyInr: 6999,
-    yearlyInr: 69999,
-    limits: { users: 15, numbers: 3, contacts: null, aiReplies: 3000 },
-  },
-  custom: {
-    id: "custom",
-    name: "Custom (single client)",
-    monthlyInr: 2999,
-    yearlyInr: null,
-    limits: { users: null, numbers: 1, contacts: null, aiReplies: 1000 },
-  },
-};
 
 export const DURATION_LABELS: Record<Duration, string> = {
   trial14: "14-day free trial",
@@ -67,9 +23,6 @@ export const DURATION_LABELS: Record<Duration, string> = {
   "12m": "12 months",
 };
 
-export function isPlanId(v: unknown): v is PlanId {
-  return typeof v === "string" && (PLAN_IDS as readonly string[]).includes(v);
-}
 export function isDuration(v: unknown): v is Duration {
   return typeof v === "string" && (DURATIONS as readonly string[]).includes(v);
 }
@@ -171,4 +124,190 @@ export function normalizeDomain(v: unknown): string | null {
     .replace(/^https?:\/\//, "")
     .replace(/\/.*$/, "");
   return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(s) ? s : null;
+}
+
+/**
+ * Start of the current billing month: the 1st at 00:00 India time,
+ * returned as a UTC Date. AI allowances reset then.
+ */
+export function monthStartIst(now: Date = new Date()): Date {
+  const IST_MS = 330 * 60 * 1000;
+  const local = new Date(now.getTime() + IST_MS);
+  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1) - IST_MS);
+}
+
+/** "2026-11" — the IST month key used to remember sent usage alerts. */
+export function monthKeyIst(now: Date = new Date()): string {
+  const start = new Date(monthStartIst(now).getTime() + 330 * 60 * 1000);
+  return `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/**
+ * Which usage alert (0, 80 or 100) is due given usage and what was
+ * already sent this month. Returns null when nothing new to send.
+ */
+export function dueUsageAlert(
+  used: number,
+  limit: number | null,
+  alreadySent: number,
+): 80 | 100 | null {
+  if (limit === null || limit <= 0) return null;
+  const pct = (used / limit) * 100;
+  if (pct >= 100 && alreadySent < 100) return 100;
+  if (pct >= 80 && alreadySent < 80) return 80;
+  return null;
+}
+
+// ---- Plan catalogue rows ------------------------------------------
+
+export interface PlatformPlan {
+  key: string;
+  name: string;
+  description: string;
+  monthlyPrice: number | null;
+  yearlyPrice: number | null;
+  limits: {
+    users: number | null;
+    numbers: number;
+    contacts: number | null;
+    aiReplies: number | null;
+    aiTests: number | null;
+  };
+  /** Free add-on given with another service (website, ads, video…). */
+  isBonus: boolean;
+  defaultDuration: Duration;
+  isActive: boolean;
+  isBuiltin: boolean;
+  sortOrder: number;
+}
+
+export const PLAN_COLUMNS =
+  "key, name, description, monthly_price, yearly_price, limit_users, limit_numbers, limit_contacts, limit_ai_replies, ai_test_allowance, is_bonus, default_duration, is_active, is_builtin, sort_order";
+
+export function rowToPlan(r: Record<string, unknown>): PlatformPlan {
+  const num = (v: unknown) => (typeof v === "number" ? v : null);
+  return {
+    key: String(r.key),
+    name: String(r.name),
+    description: typeof r.description === "string" ? r.description : "",
+    monthlyPrice: num(r.monthly_price),
+    yearlyPrice: num(r.yearly_price),
+    limits: {
+      users: num(r.limit_users),
+      numbers: num(r.limit_numbers) ?? 1,
+      contacts: num(r.limit_contacts),
+      aiReplies: num(r.limit_ai_replies),
+      aiTests: num(r.ai_test_allowance),
+    },
+    isBonus: Boolean(r.is_bonus),
+    defaultDuration: isDuration(r.default_duration) ? r.default_duration : "1m",
+    isActive: r.is_active !== false,
+    isBuiltin: Boolean(r.is_builtin),
+    sortOrder: num(r.sort_order) ?? 100,
+  };
+}
+
+/** Column values for `accounts` when a client is put on `plan`. */
+export function planLimitColumns(plan: PlatformPlan): {
+  limit_users: number | null;
+  limit_contacts: number | null;
+  limit_ai_replies: number | null;
+  ai_test_allowance: number | null;
+} {
+  return {
+    limit_users: plan.limits.users,
+    limit_contacts: plan.limits.contacts,
+    limit_ai_replies: plan.limits.aiReplies,
+    ai_test_allowance: plan.limits.aiTests,
+  };
+}
+
+/** URL-safe key for a new plan name: "Website Bonus 3M" → "website-bonus-3m". */
+export function planKeyFromName(name: string): string {
+  const base = name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 36);
+  return base.length >= 2 ? base : `plan-${base || "x"}`;
+}
+
+// ---- Discounts ------------------------------------------------------
+
+export interface PlatformDiscount {
+  id: string;
+  name: string;
+  kind: "percent" | "amount";
+  value: number;
+  note: string;
+  validUntil: string | null;
+  isActive: boolean;
+}
+
+export const DISCOUNT_COLUMNS = "id, name, kind, value, note, valid_until, is_active";
+
+export function rowToDiscount(r: Record<string, unknown>): PlatformDiscount {
+  return {
+    id: String(r.id),
+    name: String(r.name),
+    kind: r.kind === "amount" ? "amount" : "percent",
+    value: typeof r.value === "number" ? r.value : 0,
+    note: typeof r.note === "string" ? r.note : "",
+    validUntil: typeof r.valid_until === "string" ? r.valid_until : null,
+    isActive: r.is_active !== false,
+  };
+}
+
+/** Today's date in India as YYYY-MM-DD. */
+export function todayIst(now: Date = new Date()): string {
+  return new Date(now.getTime() + 330 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/** An offer can still be given out: active and not past its last day. */
+export function discountUsable(d: PlatformDiscount, now: Date = new Date()): boolean {
+  return d.isActive && (!d.validUntil || d.validUntil >= todayIst(now));
+}
+
+export function discountLabel(d: Pick<PlatformDiscount, "kind" | "value">): string {
+  return d.kind === "percent" ? `${d.value}% off` : `₹${d.value.toLocaleString("en-IN")} off`;
+}
+
+export interface PriceBreakdown {
+  /** Plan price for the period, before discount (₹, before GST). */
+  base: number;
+  discount: number;
+  /** What to collect (never below 0). */
+  total: number;
+}
+
+/**
+ * Price for one billing period of `plan` with an optional discount.
+ * 12-month periods use the yearly price when the plan has one, else
+ * 12 × monthly. Bonus plans and 14-day trials cost 0. Null when the
+ * plan has no price set (quote by hand).
+ */
+export function priceFor(
+  plan: Pick<PlatformPlan, "monthlyPrice" | "yearlyPrice" | "isBonus">,
+  duration: Duration,
+  discount?: Pick<PlatformDiscount, "kind" | "value"> | null,
+): PriceBreakdown | null {
+  if (plan.isBonus || duration === "trial14") return { base: 0, discount: 0, total: 0 };
+  let base: number | null;
+  if (duration === "12m") {
+    base = plan.yearlyPrice ?? (plan.monthlyPrice !== null ? plan.monthlyPrice * 12 : null);
+  } else {
+    base = plan.monthlyPrice !== null ? plan.monthlyPrice * (duration === "3m" ? 3 : 1) : null;
+  }
+  if (base === null) return null;
+  let off = 0;
+  if (discount) {
+    off = discount.kind === "percent" ? Math.round((base * discount.value) / 100) : discount.value;
+  }
+  off = Math.min(off, base);
+  return { base, discount: off, total: base - off };
+}
+
+export function inr(n: number | null | undefined): string {
+  return n === null || n === undefined ? "—" : `₹${n.toLocaleString("en-IN")}`;
 }
