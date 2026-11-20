@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -62,12 +64,12 @@ export default function DiscountsPage() {
 
   const remove = async (d: CatalogDiscount) => {
     const extra = d.clients > 0 ? ` ${d.clients} client(s) will lose it.` : "";
-    if (!window.confirm(`Delete "${d.name}"?${extra}`)) return;
+    if (!(await confirmDialog(`Delete "${d.name}"?${extra}`, { destructive: true }))) return;
     try {
       await api(`/api/admin/discounts/${d.id}`, { method: "DELETE" });
       reload();
     } catch (e) {
-      window.alert((e as Error).message);
+      toast.error((e as Error).message);
     }
   };
 

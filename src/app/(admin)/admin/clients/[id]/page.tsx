@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import { ArrowLeft, KeyRound, Link2, MessageCircle, Pause, Play, Upload } from "lucide-react";
@@ -192,7 +193,7 @@ function PlanPanel({
   const [error, setError] = useState<string | null>(null);
 
   const act = async (body: Record<string, unknown>, confirmText?: string) => {
-    if (confirmText && !window.confirm(confirmText)) return;
+    if (confirmText && !(await confirmDialog(confirmText))) return;
     setBusy(true);
     setError(null);
     try {
@@ -355,7 +356,7 @@ function AccessPanel({ clientId, phone, name }: { clientId: string; phone: strin
   const [result, setResult] = useState<{ email: string; link?: string; tempPassword?: string } | null>(null);
 
   const run = async (mode: "link" | "password") => {
-    if (mode === "password" && !window.confirm("Replace the owner's password with a new temporary one?")) return;
+    if (mode === "password" && !(await confirmDialog("Replace the owner's password with a new temporary one?"))) return;
     setBusy(true);
     setError(null);
     try {

@@ -60,7 +60,9 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Perfil",
     "menuSettings": "Configurações",
-    "menuSignOut": "Sair"
+    "menuSignOut": "Sair",
+    "flows": "Flows",
+    "aiAgents": "AI Agents"
   },
   "ModeToggle": {
     "switchMode": "Mudar para o modo {mode}"
@@ -2427,7 +2429,11 @@
     "loading": "Carregando..."
   },
   "UiPrimitives": {
-    "close": "Fechar"
+    "close": "Fechar",
+    "confirmTitle": "Are you sure?",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "delete": "Delete"
   },
   "GatedButton": {
     "readOnly": "Somente leitura — sua função não pode {action}",

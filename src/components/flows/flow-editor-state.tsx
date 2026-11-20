@@ -32,6 +32,7 @@
  * implicit-delete affordance that's easier to trip accidentally.
  */
 
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   createContext,
   useCallback,
@@ -429,7 +430,7 @@ export function FlowEditorProvider({
 
   // ---- Delete ----
   const deleteFlow = useCallback(async () => {
-    const yes = window.confirm(t("deleteConfirm", { name: state.name }));
+    const yes = await confirmDialog(t("deleteConfirm", { name: state.name }), { destructive: true });
     if (!yes) return;
     try {
       const res = await fetch(`/api/flows/${initialFlow.id}`, {

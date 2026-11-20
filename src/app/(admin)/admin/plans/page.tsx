@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useState } from "react";
 import { Gift, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -102,12 +104,12 @@ export default function PlansPage() {
   };
 
   const remove = async (p: CatalogPlan) => {
-    if (!window.confirm(`Delete the plan "${p.name}"? This can't be undone.`)) return;
+    if (!(await confirmDialog(`Delete the plan "${p.name}"? This can't be undone.`, { destructive: true }))) return;
     try {
       await api(`/api/admin/plans/${p.key}`, { method: "DELETE" });
       reload();
     } catch (e) {
-      window.alert((e as Error).message);
+      toast.error((e as Error).message);
     }
   };
 

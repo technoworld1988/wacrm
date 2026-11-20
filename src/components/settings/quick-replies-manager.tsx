@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, MessageSquare, Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -114,7 +115,7 @@ export function QuickRepliesManager() {
 
   const remove = useCallback(
     async (id: string) => {
-      if (!window.confirm(t("deleteConfirm"))) return;
+      if (!(await confirmDialog(t("deleteConfirm"), { destructive: true }))) return;
       const res = await fetch(`/api/quick-replies/${id}`, { method: "DELETE" });
       if (!res.ok) {
         toast.error(t("deleteError"));

@@ -60,7 +60,9 @@
     "defaultAvatar": "아바타",
     "menuProfile": "프로필",
     "menuSettings": "설정",
-    "menuSignOut": "로그아웃"
+    "menuSignOut": "로그아웃",
+    "flows": "Flows",
+    "aiAgents": "AI Agents"
   },
   "ModeToggle": {
     "switchMode": "{mode} 모드로 전환"
@@ -2427,7 +2429,11 @@
     "loading": "불러오는 중..."
   },
   "UiPrimitives": {
-    "close": "닫기"
+    "close": "닫기",
+    "confirmTitle": "Are you sure?",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "delete": "Delete"
   },
   "GatedButton": {
     "readOnly": "읽기 전용 — 현재 역할로는 {action} 수 없습니다",

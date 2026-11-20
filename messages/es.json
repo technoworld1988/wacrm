@@ -60,7 +60,9 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Perfil",
     "menuSettings": "Configuración",
-    "menuSignOut": "Cerrar sesión"
+    "menuSignOut": "Cerrar sesión",
+    "flows": "Flows",
+    "aiAgents": "AI Agents"
   },
   "ModeToggle": {
     "switchMode": "Cambiar al modo {mode}"
@@ -2427,7 +2429,11 @@
     "loading": "Cargando..."
   },
   "UiPrimitives": {
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "confirmTitle": "Are you sure?",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "delete": "Delete"
   },
   "GatedButton": {
     "readOnly": "Solo lectura: tu rol no puede {action}",
