@@ -222,7 +222,12 @@ function PlanPanel({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex-1">
             <Field label="Plan">
-              <select value={plan} onChange={(e) => setPlan(e.target.value)} className={fieldClass} disabled={!plans}>
+              {/* Mount the select only once the options exist: a select whose
+                  options arrive after its value renders blank in Chrome. */}
+              {!plans ? (
+                <div className={cn(fieldClass, "flex items-center text-muted-foreground")}>Loading…</div>
+              ) : (
+              <select value={plan} onChange={(e) => setPlan(e.target.value)} className={fieldClass}>
                 {!c.plan && <option value="">No plan</option>}
                 {planOptions.map((p) => (
                   <option key={p.key} value={p.key}>
@@ -232,6 +237,7 @@ function PlanPanel({
                   </option>
                 ))}
               </select>
+              )}
             </Field>
           </div>
           <SecondaryButton
@@ -249,7 +255,10 @@ function PlanPanel({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="flex-1">
               <Field label="Discount">
-                <select value={discountId} onChange={(e) => setDiscountId(e.target.value)} className={fieldClass} disabled={!discounts}>
+                {!discounts ? (
+                  <div className={cn(fieldClass, "flex items-center text-muted-foreground")}>Loading…</div>
+                ) : (
+                <select value={discountId} onChange={(e) => setDiscountId(e.target.value)} className={fieldClass}>
                   <option value="">No discount</option>
                   {discountOptions.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -258,6 +267,7 @@ function PlanPanel({
                     </option>
                   ))}
                 </select>
+                )}
               </Field>
             </div>
             <SecondaryButton

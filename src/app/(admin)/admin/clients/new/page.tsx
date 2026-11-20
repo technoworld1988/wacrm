@@ -193,6 +193,9 @@ export default function AddClientPage() {
           <Panel title="Plan & billing">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Plan">
+                {!plans ? (
+                  <div className={cn(fieldClass, "flex items-center text-muted-foreground")}>Loading…</div>
+                ) : (
                 <select
                   value={meta?.key ?? ""}
                   onChange={(e) => {
@@ -201,9 +204,7 @@ export default function AddClientPage() {
                     if (next) setDuration(next.defaultDuration);
                   }}
                   className={fieldClass}
-                  disabled={!plans}
                 >
-                  {!plans && <option>Loading…</option>}
                   {activePlans.filter((p) => !p.isBonus).length > 0 && (
                     <optgroup label="Plans">
                       {activePlans.filter((p) => !p.isBonus).map((p) => (
@@ -223,6 +224,7 @@ export default function AddClientPage() {
                     </optgroup>
                   )}
                 </select>
+                )}
               </Field>
               <Field label="Duration">
                 <select value={duration} onChange={(e) => setDuration(e.target.value as Duration)} className={fieldClass}>
