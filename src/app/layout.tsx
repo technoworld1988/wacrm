@@ -39,7 +39,13 @@ const metadata: Metadata = {
     follow: false,
   },
   icons: {
-    icon: [{ url: "/icon" }],
+    // TECHNO WORLD "TW" chat-bubble mark (no label; text can't be read
+    // at tab size). src/app/favicon.ico covers browsers that ask for it.
+    icon: [
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-48.png", sizes: "48x48", type: "image/png" },
+    ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
   appleWebApp: {
