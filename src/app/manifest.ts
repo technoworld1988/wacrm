@@ -9,7 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
   const name = process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'TECHNO WORLD CRM'
   return {
     name,
-    short_name: name.length > 12 ? 'CRM' : name,
+    // Label under the home-screen icon (matches the TW / WCRM icon).
+    short_name: process.env.NEXT_PUBLIC_APP_SHORT_NAME?.trim() || 'WCRM',
     description: 'Shared WhatsApp inbox, contacts, pipelines and automations.',
     id: '/',
     start_url: '/inbox',

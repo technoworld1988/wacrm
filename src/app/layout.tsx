@@ -50,7 +50,8 @@ const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: process.env.NEXT_PUBLIC_APP_NAME?.trim() || "TECHNO WORLD CRM",
+    // iPhone home-screen label (short, matches the icon).
+    title: process.env.NEXT_PUBLIC_APP_SHORT_NAME?.trim() || "WCRM",
     statusBarStyle: "black-translucent",
   },
   formatDetection: {
