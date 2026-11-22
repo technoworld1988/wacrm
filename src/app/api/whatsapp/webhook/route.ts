@@ -160,6 +160,17 @@ export async function GET(request: Request) {
       )
     }
 
+    // Platform-wide verify token for the operator's Tech Provider app:
+    // its webhook serves every client WABA onboarded through Embedded
+    // Signup, so it can't depend on any single client's config row.
+    const platformToken = process.env.META_WEBHOOK_VERIFY_TOKEN?.trim()
+    if (platformToken && verifyTokenMatches(platformToken, verifyToken)) {
+      return new Response(challenge, {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' },
+      })
+    }
+
     // Fetch all whatsapp configs to check verify tokens
     const { data: configs, error: configError } = await supabaseAdmin()
       .from('whatsapp_config')

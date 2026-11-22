@@ -55,7 +55,13 @@ export function verifyMetaWebhookSignature(
   rawBody: string,
   signatureHeader: string | null,
 ): boolean {
-  const secrets = parseAppSecrets(process.env.META_APP_SECRET)
+  // META_PLATFORM_APP_SECRET: the operator's Tech Provider app (Embedded
+  // Signup), kept in its own variable so adding it never requires
+  // re-entering the existing sensitive META_APP_SECRET.
+  const secrets = [
+    ...parseAppSecrets(process.env.META_APP_SECRET),
+    ...parseAppSecrets(process.env.META_PLATFORM_APP_SECRET),
+  ]
   if (secrets.length === 0) {
     console.error(
       '[webhook] META_APP_SECRET is not set — rejecting request. ' +

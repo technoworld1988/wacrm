@@ -150,3 +150,23 @@ describe("verifyTokenMatches", () => {
     expect(verifyTokenMatches("abc", "abc\0")).toBe(false);
   });
 });
+
+describe("platform app secret", () => {
+  it("accepts a signature from META_PLATFORM_APP_SECRET alongside META_APP_SECRET", async () => {
+    const crypto = await import("node:crypto");
+    const body = '{"x":1}';
+    const sig = "sha256=" + crypto.createHmac("sha256", "platform-secret").update(body).digest("hex");
+    const prevA = process.env.META_APP_SECRET;
+    const prevP = process.env.META_PLATFORM_APP_SECRET;
+    process.env.META_APP_SECRET = "old-secret";
+    process.env.META_PLATFORM_APP_SECRET = "platform-secret";
+    try {
+      expect(verifyMetaWebhookSignature(body, sig)).toBe(true);
+      process.env.META_PLATFORM_APP_SECRET = "";
+      expect(verifyMetaWebhookSignature(body, sig)).toBe(false);
+    } finally {
+      process.env.META_APP_SECRET = prevA;
+      process.env.META_PLATFORM_APP_SECRET = prevP;
+    }
+  });
+});
