@@ -25,6 +25,11 @@ import { Skeleton } from './skeleton'
 
 type View = 'time' | 'hours'
 
+/** Mid-month, so a time-zone shift in formatting can't land on the previous month. */
+function midMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 15, 12)
+}
+
 export function MessageVolumeCard({ data }: { data: DashboardOverview | null }) {
   const t = useTranslations('Dashboard.overview.volume')
   const format = useFormatter()
@@ -52,7 +57,7 @@ export function MessageVolumeCard({ data }: { data: DashboardOverview | null }) 
       label: byHour
         ? hourLabel(d.getHours())
         : byMonth
-          ? format.dateTime(d, { month: 'short' })
+          ? format.dateTime(midMonth(d), { month: 'short' })
           : format.dateTime(d, days <= 7 ? { weekday: 'short' } : { day: 'numeric', month: 'short' }),
       [incomingLabel]: p.incoming,
       [outgoingLabel]: p.outgoing,
@@ -68,7 +73,7 @@ export function MessageVolumeCard({ data }: { data: DashboardOverview | null }) 
     ? byHour
       ? hourLabel(bucketDate(busiest.t).getHours())
       : byMonth
-        ? format.dateTime(bucketDate(busiest.t), { month: 'long', year: 'numeric' })
+        ? format.dateTime(midMonth(bucketDate(busiest.t)), { month: 'long', year: 'numeric' })
         : format.dateTime(bucketDate(busiest.t), { weekday: 'short', day: 'numeric', month: 'short' })
     : t('none')
 
