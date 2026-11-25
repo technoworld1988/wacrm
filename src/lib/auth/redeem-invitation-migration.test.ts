@@ -21,6 +21,10 @@ const tablesWithoutDomainData = new Set([
   // not data the joining user owns.
   "platform_client_notes",
   "platform_admin_activity",
+  // Follow-up sequences (migration 064) are settings, and enrollments
+  // hang off contacts — which are already checked — and cascade with them.
+  "followup_sequences",
+  "followup_enrollments",
 ]);
 
 function accountScopedTables(): Set<string> {

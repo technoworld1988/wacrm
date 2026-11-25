@@ -20,6 +20,7 @@ import {
 } from '@/lib/whatsapp/webhook-signature'
 import { readCappedBody } from '@/lib/whatsapp/webhook-body'
 import { resumeAwaitingReply, runAutomationsForTrigger } from '@/lib/automations/engine'
+import { autoEnrollNewContact, markFollowUpsReplied } from '@/lib/followups/engine'
 import { dispatchInboundToFlows } from '@/lib/flows/engine'
 import { dispatchInboundToAiReply } from '@/lib/ai/auto-reply'
 import { dispatchWebhookEvent } from '@/lib/webhooks/deliver'
@@ -823,6 +824,12 @@ async function processMessage(
   // no active flows take the runner's early-exit "no_match" path
   // basically for free (one indexed SELECT for the active run).
   // ============================================================
+  // Follow-ups: any reply stops a running sequence; a brand-new lead
+  // joins the account's auto-enroll sequence (if one is switched on).
+  // Both never throw.
+  await markFollowUpsReplied(accountId, contactRecord.id)
+  if (contactOutcome.wasCreated) await autoEnrollNewContact(accountId, contactRecord.id)
+
   const flowResult = await dispatchInboundToFlows({
     accountId,
     userId: configOwnerUserId,

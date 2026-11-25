@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { contactHandle } from "@/lib/whatsapp/wa-identity";
+import { FollowUpPanel } from "@/components/followups/follow-up-panel";
 
 interface ContactSidebarProps {
   contact: Contact | null;
@@ -256,6 +257,12 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
               )}
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="my-4 border-t border-border" />
+
+          {/* Follow-up sequence + reminder */}
+          <FollowUpPanel key={contact.id} contactId={contact.id} />
 
           {/* Divider */}
           <div className="my-4 border-t border-border" />
