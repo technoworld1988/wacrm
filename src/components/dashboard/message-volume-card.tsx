@@ -39,6 +39,7 @@ export function MessageVolumeCard({ data }: { data: DashboardOverview | null }) 
 
   const series = data?.volume.series ?? []
   const byHour = data?.unit === 'hour'
+  const byMonth = data?.unit === 'month'
   const totalIn = series.reduce((sum, p) => sum + p.incoming, 0)
   const totalOut = series.reduce((sum, p) => sum + p.outgoing, 0)
   const busiest = busiestBucket(series)
@@ -50,7 +51,9 @@ export function MessageVolumeCard({ data }: { data: DashboardOverview | null }) 
     return {
       label: byHour
         ? hourLabel(d.getHours())
-        : format.dateTime(d, days <= 7 ? { weekday: 'short' } : { day: 'numeric', month: 'short' }),
+        : byMonth
+          ? format.dateTime(d, { month: 'short' })
+          : format.dateTime(d, days <= 7 ? { weekday: 'short' } : { day: 'numeric', month: 'short' }),
       [incomingLabel]: p.incoming,
       [outgoingLabel]: p.outgoing,
     }
@@ -64,7 +67,9 @@ export function MessageVolumeCard({ data }: { data: DashboardOverview | null }) 
   const busiestLabel = busiest
     ? byHour
       ? hourLabel(bucketDate(busiest.t).getHours())
-      : format.dateTime(bucketDate(busiest.t), { weekday: 'short', day: 'numeric', month: 'short' })
+      : byMonth
+        ? format.dateTime(bucketDate(busiest.t), { month: 'long', year: 'numeric' })
+        : format.dateTime(bucketDate(busiest.t), { weekday: 'short', day: 'numeric', month: 'short' })
     : t('none')
 
   return (
@@ -76,7 +81,7 @@ export function MessageVolumeCard({ data }: { data: DashboardOverview | null }) 
           <Tabs value={view} onValueChange={(v) => setView(v as View)}>
             <TabsList>
               <TabsTrigger value="time" className="px-2.5 text-xs">
-                {byHour ? t('byHour') : t('byDay')}
+                {byHour ? t('byHour') : byMonth ? t('byMonth') : t('byDay')}
               </TabsTrigger>
               <TabsTrigger value="hours" className="px-2.5 text-xs">
                 {t('busiestHours')}
@@ -98,10 +103,10 @@ export function MessageVolumeCard({ data }: { data: DashboardOverview | null }) 
                   <Stat label={incomingLabel} value={format.number(totalIn)} />
                   <Stat label={outgoingLabel} value={format.number(totalOut)} />
                   <Stat
-                    label={byHour ? t('perHour') : t('perDay')}
+                    label={byHour ? t('perHour') : byMonth ? t('perMonth') : t('perDay')}
                     value={format.number(totalIn / Math.max(1, series.length), { maximumFractionDigits: 0 })}
                   />
-                  <Stat label={byHour ? t('busiestHour') : t('busiestDay')} value={busiestLabel} />
+                  <Stat label={byHour ? t('busiestHour') : byMonth ? t('busiestMonth') : t('busiestDay')} value={busiestLabel} />
                 </>
               ) : (
                 <>

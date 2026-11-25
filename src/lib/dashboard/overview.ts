@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-export const OVERVIEW_RANGES = [1, 7, 30, 90] as const
+export const OVERVIEW_RANGES = [1, 7, 30, 90, 365] as const
 export type OverviewRange = (typeof OVERVIEW_RANGES)[number]
 export const DEFAULT_OVERVIEW_RANGE: OverviewRange = 7
 
@@ -142,7 +142,7 @@ export interface DashboardOverview {
   generatedAt: string
   timeZone: string
   days: OverviewRange
-  unit: 'hour' | 'day'
+  unit: 'hour' | 'day' | 'month'
   periodStart: string
   previousStart: string
   previousEnd: string

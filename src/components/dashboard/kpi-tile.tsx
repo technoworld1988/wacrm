@@ -1,11 +1,11 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { ArrowDown, ArrowUp, Info, Minus } from 'lucide-react'
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import { Card } from '@/components/ui/card'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { InfoTip } from '@/components/ui/info-tip'
 import type { Change } from '@/lib/dashboard/overview'
 import { cn } from '@/lib/utils'
 import { Skeleton } from './skeleton'
@@ -62,15 +62,7 @@ export function KpiTile({
     <Card size="sm" className="gap-2 px-4">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <span className="truncate">{title}</span>
-        <Tooltip>
-          <TooltipTrigger
-            className="inline-flex shrink-0 rounded-full text-muted-foreground/70 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            aria-label={info}
-          >
-            <Info className="size-3.5" />
-          </TooltipTrigger>
-          <TooltipContent>{info}</TooltipContent>
-        </Tooltip>
+        <InfoTip text={info} label={info} />
       </div>
       <p className="text-2xl leading-none font-semibold tracking-tight text-foreground tabular-nums">
         {value}

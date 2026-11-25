@@ -135,7 +135,8 @@
           "1": "Hoy",
           "7": "7 días",
           "30": "30 días",
-          "90": "90 días"
+          "90": "90 días",
+          "365": "12 meses"
         },
         "new": "Nuevo",
         "newContact": "Nuevo contacto",
@@ -194,7 +195,8 @@
           "1": "frente a ayer",
           "7": "frente a los 7 días anteriores",
           "30": "frente a los 30 días anteriores",
-          "90": "frente a los 90 días anteriores"
+          "90": "frente a los 90 días anteriores",
+          "365": "vs 12 meses anteriores"
         },
         "noComparison": "Sin cambios",
         "new": "Nuevo",
@@ -222,7 +224,10 @@
         "secondPeak": "Segunda hora con más mensajes",
         "none": "—",
         "empty": "No hay mensajes en este periodo",
-        "emptyHint": "Los mensajes aparecen aquí cuando los clientes te escriben."
+        "emptyHint": "Los mensajes aparecen aquí cuando los clientes te escriben.",
+        "byMonth": "Por mes",
+        "perMonth": "Entrantes por mes",
+        "busiestMonth": "Mes con más mensajes"
       },
       "queue": {
         "title": "Cola de respuestas",

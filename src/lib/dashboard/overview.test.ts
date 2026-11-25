@@ -29,6 +29,7 @@ describe('parseOverviewRange', () => {
     expect(parseOverviewRange('1')).toBe(1)
     expect(parseOverviewRange('30')).toBe(30)
     expect(parseOverviewRange('90')).toBe(90)
+    expect(parseOverviewRange('365')).toBe(365)
   })
 
   it('falls back to 7 days for anything else', () => {

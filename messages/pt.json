@@ -135,7 +135,8 @@
           "1": "Hoje",
           "7": "7 dias",
           "30": "30 dias",
-          "90": "90 dias"
+          "90": "90 dias",
+          "365": "12 meses"
         },
         "new": "Novo",
         "newContact": "Novo contato",
@@ -194,7 +195,8 @@
           "1": "vs ontem",
           "7": "vs 7 dias anteriores",
           "30": "vs 30 dias anteriores",
-          "90": "vs 90 dias anteriores"
+          "90": "vs 90 dias anteriores",
+          "365": "vs 12 meses anteriores"
         },
         "noComparison": "Sem alteração",
         "new": "Novo",
@@ -222,7 +224,10 @@
         "secondPeak": "Segunda mais movimentada",
         "none": "—",
         "empty": "Nenhuma mensagem neste período",
-        "emptyHint": "As mensagens aparecem aqui quando os clientes escrevem para você."
+        "emptyHint": "As mensagens aparecem aqui quando os clientes escrevem para você.",
+        "byMonth": "Por mês",
+        "perMonth": "Recebidas por mês",
+        "busiestMonth": "Mês mais movimentado"
       },
       "queue": {
         "title": "Fila de respostas",
