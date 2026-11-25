@@ -147,8 +147,13 @@ export async function processDueFollowUps(limit = 30, now: Date = new Date()): P
     .limit(limit)
   if (error || !due) return 0
 
+  // The public demo account's sample follow-ups are for show only.
+  const { data: demoAccounts } = await db.from('accounts').select('id').eq('is_demo', true)
+  const demoIds = new Set((demoAccounts ?? []).map((a) => a.id as string))
+
   let processed = 0
   for (const row of due) {
+    if (demoIds.has(row.account_id as string)) continue
     // Claim: only one cron invocation may send this step.
     const claimQuery = db
       .from('followup_enrollments')
