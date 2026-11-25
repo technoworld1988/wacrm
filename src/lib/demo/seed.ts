@@ -403,7 +403,10 @@ export async function seedDemoData(
     'steps',
   )
   const enr = (key: string, fields: Record<string, unknown>) => ({
-    account_id: accountId, sequence_id: seqId, contact_id: cid(key), enrolled_by: ownerUserId, ...fields,
+    account_id: accountId, sequence_id: seqId, contact_id: cid(key), enrolled_by: ownerUserId,
+    // A bulk insert sends every column for every row (missing ones as
+    // NULL), so NOT NULL timestamps must always be present.
+    updated_at: at(0), next_run_at: null, last_sent_at: null, replied_at: null, ...fields,
   })
   await must(
     db.from('followup_enrollments').insert([
