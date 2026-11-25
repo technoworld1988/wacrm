@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS public.invoice_settings (
   state_code            TEXT CHECK (state_code IS NULL OR state_code ~ '^[0-9]{2}$'),
   phone                 TEXT CHECK (phone IS NULL OR char_length(phone) <= 40),
   email                 TEXT CHECK (email IS NULL OR char_length(email) <= 200),
-  upi_id                TEXT CHECK (upi_id IS NULL OR upi_id ~ '^[A-Za-z0-9._-]{2,256}@[A-Za-z0-9.-]{2,64}$'),
+  -- Postgres regex repeat counts max out at 255, hence {2,} + a length check.
+  upi_id                TEXT CHECK (upi_id IS NULL OR (char_length(upi_id) <= 320 AND upi_id ~ '^[A-Za-z0-9._-]{2,}@[A-Za-z0-9.-]{2,64}$')),
   bank_details          TEXT CHECK (bank_details IS NULL OR char_length(bank_details) <= 500),
   invoice_prefix        TEXT NOT NULL DEFAULT 'INV-' CHECK (char_length(invoice_prefix) <= 12),
   estimate_prefix       TEXT NOT NULL DEFAULT 'EST-' CHECK (char_length(estimate_prefix) <= 12),

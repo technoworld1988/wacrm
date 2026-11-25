@@ -59,7 +59,7 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
             {s?.gstin && <p className="text-sm">GSTIN: <span className="font-mono">{s.gstin as string}</span></p>}
             {(s?.phone || s?.email) && <p className="text-sm text-[#55577F]">{[s?.phone, s?.email].filter(Boolean).join(" · ")}</p>}
           </div>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-2xl font-bold tracking-tight">{isInvoice ? (s?.gstin ? "TAX INVOICE" : "INVOICE") : "ESTIMATE"}</p>
             <p className="font-mono text-sm">{inv.number}</p>
             <p className="mt-1 text-sm text-[#55577F]">Date: {fmtDate(inv.issue_date as string)}</p>
