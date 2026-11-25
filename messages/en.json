@@ -2428,7 +2428,11 @@
     "defaultListButton": "Menu"
   },
   "DashboardShell": {
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "demoBanner": "You're exploring a live demo with sample data. Nothing here is sent to real customers.",
+    "demoGet": "Get WCRM",
+    "demoExit": "Exit demo",
+    "demoWhatsappText": "Hi, I tried the WCRM demo and want to know more about the Founding offer."
   },
   "UiPrimitives": {
     "close": "Close",

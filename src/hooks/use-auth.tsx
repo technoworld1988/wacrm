@@ -53,6 +53,8 @@ interface AccountSummary {
   brand_logo_url: string | null;
   brand_primary: string | null;
   brand_accent: string | null;
+  /** The public /demo sample account (migration 065). */
+  is_demo: boolean;
 }
 
 /**
@@ -253,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // default_currency added in migration 021; narrowed to the
             // USD fallback below for older schemas where it reads null.
             .select(
-              "id, name, default_currency, status, plan, plan_ends_at, white_label, brand_name, brand_logo_url, brand_primary, brand_accent",
+              "id, name, default_currency, status, plan, plan_ends_at, white_label, brand_name, brand_logo_url, brand_primary, brand_accent, is_demo",
             )
             .eq("id", data.account_id)
             .maybeSingle();
@@ -277,6 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               brand_logo_url: account.brand_logo_url ?? null,
               brand_primary: account.brand_primary ?? null,
               brand_accent: account.brand_accent ?? null,
+              is_demo: Boolean(account.is_demo),
             };
           }
         }

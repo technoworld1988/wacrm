@@ -20,6 +20,8 @@ export async function GET() {
         .select(
           "id, name, status, plan, plan_ends_at, business_phone, white_label, brand_name, created_at",
         )
+        // The public demo account isn't a client.
+        .eq("is_demo", false)
         .order("created_at", { ascending: false }),
       db.from("profiles").select("account_id, user_id, full_name, email, account_role"),
       db.from("whatsapp_config").select("account_id, status"),

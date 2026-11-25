@@ -15,7 +15,7 @@ export async function GET() {
     const [plans, discounts, accounts] = await Promise.all([
       loadPlans(db),
       loadDiscounts(db),
-      db.from("accounts").select("plan, discount_id"),
+      db.from("accounts").select("plan, discount_id").eq("is_demo", false),
     ]);
     if (accounts.error) throw accounts.error;
     const planUse = new Map<string, number>();

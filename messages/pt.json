@@ -2428,7 +2428,11 @@
     "defaultListButton": "Menu"
   },
   "DashboardShell": {
-    "loading": "Carregando..."
+    "loading": "Carregando...",
+    "demoBanner": "Você está vendo uma demo com dados de exemplo. Nada é enviado a clientes reais.",
+    "demoGet": "Quero o WCRM",
+    "demoExit": "Sair da demo",
+    "demoWhatsappText": "Olá, testei a demo do WCRM e quero saber mais."
   },
   "UiPrimitives": {
     "close": "Fechar",

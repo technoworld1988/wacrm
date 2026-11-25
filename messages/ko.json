@@ -2428,7 +2428,11 @@
     "defaultListButton": "메뉴"
   },
   "DashboardShell": {
-    "loading": "불러오는 중..."
+    "loading": "불러오는 중...",
+    "demoBanner": "샘플 데이터로 된 라이브 데모를 보고 있습니다. 실제 고객에게는 아무것도 발송되지 않습니다.",
+    "demoGet": "WCRM 신청",
+    "demoExit": "데모 종료",
+    "demoWhatsappText": "안녕하세요, WCRM 데모를 써 봤는데 더 알고 싶습니다."
   },
   "UiPrimitives": {
     "close": "닫기",
