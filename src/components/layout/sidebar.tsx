@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
 import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
-import { CalendarClock, CalendarCheck,
+import { ReceiptIndianRupee, CalendarClock, CalendarCheck,
   Bell,
   Bot,
   Building2,
@@ -96,6 +96,7 @@ const navItems: NavItem[] = [
   { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
   { href: "/follow-ups", labelKey: "followUps", icon: CalendarCheck },
   { href: "/appointments", labelKey: "appointments", icon: CalendarClock },
+  { href: "/invoices", labelKey: "invoices", icon: ReceiptIndianRupee },
   { href: "/notifications", labelKey: "notifications", icon: Bell },
   { href: "/contacts", labelKey: "contacts", icon: Users },
   { href: "/pipelines", labelKey: "pipelines", icon: GitBranch },

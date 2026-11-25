@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { endOfTodayIst } from '@/lib/followups/schedule'
+import { computeTotals, istDate, type InvoiceItem } from '@/lib/invoices/calc'
 
 const H = 60 * 60 * 1000
 const M = 60 * 1000
@@ -190,7 +191,7 @@ async function must<T>(p: PromiseLike<{ data: T; error: { message: string } | nu
 /** Wipe the demo account's business data. Contacts cascade to chats, deals, tags, enrollments. */
 export async function clearDemoData(db: SupabaseClient, accountId: string): Promise<void> {
   for (const table of [
-    'appointment_settings', 'followup_sequences', 'broadcasts', 'automations', 'deals', 'pipelines',
+    'invoices', 'invoice_settings', 'appointment_settings', 'followup_sequences', 'broadcasts', 'automations', 'deals', 'pipelines',
     'contacts', 'tags', 'message_templates', 'notifications',
   ]) {
     await must(db.from(table).delete().eq('account_id', accountId), `clear ${table}`)
@@ -425,6 +426,77 @@ export async function seedDemoData(
       appt('sandeep', { title: 'Site visit', starts_at: istAt(-1, 17), status: 'no_show', day_before_sent_at: at(2 * D), hours_before_sent_at: at(D + 2 * H) }),
     ]),
     'appointments',
+  )
+
+  // Invoices + estimates
+  await must(
+    db.from('invoice_settings').insert({
+      account_id: accountId,
+      business_name: 'Sharma Interiors',
+      gstin: '19ABCPS1234K1Z5',
+      address: '12 Park Street, Kolkata 700016, West Bengal',
+      state_code: '19',
+      phone: '+91 90000 00100',
+      email: 'hello@sharmainteriors.example',
+      upi_id: 'sharmainteriors@okhdfcbank',
+      invoice_prefix: 'INV-',
+      estimate_prefix: 'EST-',
+      next_invoice_number: 46,
+      next_estimate_number: 14,
+      default_terms: '50% advance, balance on completion. Prices include installation.',
+      reminder_template_name: 'payment_reminder',
+      reminder_template_language: 'en',
+      reminder_variables: ['{{first_name}}', '{{amount}}', '{{number}}', '{{due_date}}'],
+      reminders_enabled: true,
+    }),
+    'invoice settings',
+  )
+  const today = istDate(now)
+  const day = (n: number) => new Date(Date.parse(`${today}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10)
+  const doc = (
+    key: string, kind: 'invoice' | 'estimate', number: string, status: string, issue: number, due: number,
+    items: InvoiceItem[], extra: Record<string, unknown> = {},
+  ) => {
+    const tot = computeTotals(items, 0, '19', '19')
+    const c = allContacts.find((x) => x.key === key)!
+    return {
+      account_id: accountId, contact_id: cid(key), kind, number, status, issue_date: day(issue), due_date: day(due),
+      customer_name: c.name, customer_phone: c.phone, customer_gstin: null, customer_address: 'Kolkata, West Bengal',
+      place_of_supply: '19', items, discount: 0, subtotal: tot.subtotal, cgst: tot.cgst, sgst: tot.sgst, igst: tot.igst,
+      total: tot.total, amount_paid: 0, notes: 'Thank you for choosing Sharma Interiors!', terms: '50% advance, balance on completion.',
+      reminder_count: 0, last_reminder_at: null, paid_at: null, created_by: ownerUserId, ...extra,
+    }
+  }
+  const wardrobes: InvoiceItem[] = [
+    { description: 'Sliding wardrobe, 3 bedrooms (laminate finish)', hsn: '9403', qty: 3, rate: 62000, gst_rate: 18 },
+    { description: 'Installation', hsn: '995461', qty: 1, rate: 15000, gst_rate: 18 },
+  ]
+  const living: InvoiceItem[] = [
+    { description: 'TV unit with back panel', hsn: '9403', qty: 1, rate: 85000, gst_rate: 18 },
+    { description: 'False ceiling with cove lights (sq ft)', hsn: '995461', qty: 320, rate: 180, gst_rate: 18 },
+    { description: 'Design consultation', hsn: '998391', qty: 1, rate: 15000, gst_rate: 18 },
+  ]
+  const kitchen: InvoiceItem[] = [
+    { description: 'L-shaped modular kitchen (BWP ply, acrylic shutters)', hsn: '9403', qty: 1, rate: 148000, gst_rate: 18 },
+    { description: 'Hettich soft-close hardware set', hsn: '8302', qty: 1, rate: 12000, gst_rate: 18 },
+  ]
+  const studio: InvoiceItem[] = [
+    { description: 'Studio makeover – furniture package', hsn: '9403', qty: 1, rate: 210000, gst_rate: 18 },
+    { description: 'Painting (sq ft)', hsn: '995473', qty: 450, rate: 28, gst_rate: 18 },
+  ]
+  const invTotal = (items: InvoiceItem[]) => computeTotals(items, 0, '19', '19').total
+  await must(
+    db.from('invoices').insert([
+      doc('meera', 'invoice', 'INV-0041', 'paid', -20, -5, living, { amount_paid: invTotal(living), paid_at: at(6 * D), reminder_count: 1, last_reminder_at: at(7 * D) }),
+      doc('rahul', 'invoice', 'INV-0042', 'paid', -9, 4, wardrobes, { amount_paid: invTotal(wardrobes), paid_at: at(4 * H) }),
+      doc('vikram', 'invoice', 'INV-0043', 'partially_paid', -18, -3, studio, { amount_paid: 150000, reminder_count: 2, last_reminder_at: at(3 * D) }),
+      doc('neha', 'invoice', 'INV-0044', 'sent', -12, -4, [{ description: 'Curtains & blinds – 2BHK', hsn: '6303', qty: 1, rate: 46000, gst_rate: 12 }], { reminder_count: 2, last_reminder_at: at(4 * D) }),
+      doc('arjun', 'invoice', 'INV-0045', 'sent', -1, 14, [{ description: '3BHK interiors – 50% advance', hsn: '995461', qty: 1, rate: 400424, gst_rate: 18 }]),
+      doc('arjun', 'estimate', 'EST-0011', 'accepted', -6, 24, [{ description: '3BHK full interiors (as per drawings)', hsn: '995461', qty: 1, rate: 800847, gst_rate: 18 }]),
+      doc('priya', 'estimate', 'EST-0012', 'sent', -1, 29, living),
+      doc('fatima', 'estimate', 'EST-0013', 'draft', 0, 30, kitchen),
+    ]),
+    'invoices',
   )
 
   // Follow-up sequence + enrollments

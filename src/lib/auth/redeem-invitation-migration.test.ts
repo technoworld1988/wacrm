@@ -28,6 +28,10 @@ const tablesWithoutDomainData = new Set([
   // Appointments (067) hang off contacts; settings are configuration.
   "appointments",
   "appointment_settings",
+  // Invoices (068) keep a contact link that is nulled on delete; the
+  // settings row is configuration.
+  "invoices",
+  "invoice_settings",
 ]);
 
 function accountScopedTables(): Set<string> {
