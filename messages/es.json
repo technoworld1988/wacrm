@@ -3082,6 +3082,7 @@
     "reminderCleared": "Recordatorio quitado",
     "quickTomorrow": "Mañana 10:00",
     "quick3days": "En 3 días",
-    "quickWeek": "En una semana"
+    "quickWeek": "En una semana",
+    "panelNone": "No hay seguimiento en curso para este contacto."
   }
 }

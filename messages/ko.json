@@ -3082,6 +3082,7 @@
     "reminderCleared": "알림이 삭제되었습니다",
     "quickTomorrow": "내일 오전 10시",
     "quick3days": "3일 후",
-    "quickWeek": "1주 후"
+    "quickWeek": "1주 후",
+    "panelNone": "이 연락처에 진행 중인 팔로업이 없습니다."
   }
 }

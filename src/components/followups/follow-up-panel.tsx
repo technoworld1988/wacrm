@@ -142,6 +142,7 @@ export function FollowUpPanel({ contactId }: Props) {
                 {latest.status === "failed" && t("statusFailed", { error: latest.last_error ?? "" })}
               </p>
             )}
+            {!canAct && !latest && <p className="px-1 text-xs text-muted-foreground">{t("panelNone")}</p>}
             {canAct &&
               (sequences.length === 0 ? (
                 <p className="px-1 text-xs text-muted-foreground">

@@ -8,6 +8,7 @@
 // ============================================================
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { endOfTodayIst } from '@/lib/followups/schedule'
 
 const H = 60 * 60 * 1000
 const M = 60 * 1000
@@ -203,6 +204,10 @@ export async function seedDemoData(
   now: Date = new Date(),
 ): Promise<void> {
   const at = (msAgo: number) => new Date(now.getTime() - msAgo).toISOString()
+  // A time later today (India), never past midnight, so it lands in the Today list.
+  const eod = endOfTodayIst(now).getTime()
+  const laterToday = (ms: number) =>
+    new Date(Math.max(now.getTime() + 60_000, Math.min(now.getTime() + ms, eod - 5 * 60_000))).toISOString()
   const base = { account_id: accountId, user_id: ownerUserId }
 
   // Tags
@@ -231,13 +236,13 @@ export async function seedDemoData(
   if (contactTags.length) await must(db.from('contact_tags').insert(contactTags), 'contact_tags')
 
   // Manual follow-up reminders (feed the Follow-ups → Today list)
-  const reminders: [string, number, string][] = [
-    ['arjun', -2 * H, 'Call Arjun – he will confirm the 3BHK quote after talking to his wife'],
-    ['kavita', 20 * H, 'Overdue: send living room designs she asked for at the expo'],
-    ['anjali', -5 * H, 'Ask if she reviewed the home-office quote'],
+  const reminders: [string, string, string][] = [
+    ['arjun', laterToday(2 * H), 'Call Arjun – he will confirm the 3BHK quote after talking to his wife'],
+    ['kavita', at(20 * H), 'Send the living room designs she asked for at the home expo'],
+    ['anjali', at(3 * H), 'Ask if she reviewed the home-office quote'],
   ]
-  for (const [key, msAgo, note] of reminders) {
-    await must(db.from('contacts').update({ next_follow_up_at: at(msAgo), follow_up_note: note }).eq('id', cid(key)), 'reminder')
+  for (const [key, when, note] of reminders) {
+    await must(db.from('contacts').update({ next_follow_up_at: when, follow_up_note: note }).eq('id', cid(key)), 'reminder')
   }
 
   // Conversations + messages
@@ -410,8 +415,8 @@ export async function seedDemoData(
   })
   await must(
     db.from('followup_enrollments').insert([
-      enr('sandeep', { status: 'active', next_step: 1, next_run_at: at(-3 * H), last_sent_at: at(2 * D) }),
-      enr('tarun', { status: 'active', next_step: 0, next_run_at: at(-5 * H) }),
+      enr('sandeep', { status: 'active', next_step: 1, next_run_at: laterToday(40 * M), last_sent_at: at(2 * D) }),
+      enr('tarun', { status: 'active', next_step: 0, next_run_at: laterToday(90 * M) }),
       enr('karthik', { status: 'active', next_step: 2, next_run_at: at(-26 * H), last_sent_at: at(2 * D) }),
       enr('vikram', { status: 'replied', next_step: 1, last_sent_at: at(2 * D), replied_at: at(6 * H), updated_at: at(6 * H) }),
     ]),

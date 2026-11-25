@@ -6,6 +6,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 
 import type { PhoneHealth } from '@/lib/whatsapp/phone-health'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
 
 const DOT_CLASS = {
   GREEN: 'bg-status-good',
@@ -18,6 +19,7 @@ export function WhatsAppHealthChip() {
   const t = useTranslations('Dashboard.overview.health')
   const format = useFormatter()
   const [health, setHealth] = useState<PhoneHealth | null>(null)
+  const { account } = useAuth()
 
   useEffect(() => {
     let cancelled = false
@@ -32,7 +34,8 @@ export function WhatsAppHealthChip() {
     }
   }, [])
 
-  if (!health) return null
+  // The public demo has no number on purpose; don't flag it.
+  if (!health || account?.is_demo) return null
 
   const limit =
     health.limit?.kind === 'unlimited'

@@ -3082,6 +3082,7 @@
     "reminderCleared": "Lembrete removido",
     "quickTomorrow": "Amanhã 10h",
     "quick3days": "Em 3 dias",
-    "quickWeek": "Em uma semana"
+    "quickWeek": "Em uma semana",
+    "panelNone": "Nenhum follow-up em andamento para este contato."
   }
 }
