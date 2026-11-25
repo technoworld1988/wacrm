@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { contactHandle } from "@/lib/whatsapp/wa-identity";
 import { FollowUpPanel } from "@/components/followups/follow-up-panel";
+import { AppointmentPanel } from "@/components/appointments/appointment-panel";
 
 interface ContactSidebarProps {
   contact: Contact | null;
@@ -263,6 +264,11 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
 
           {/* Follow-up sequence + reminder */}
           <FollowUpPanel key={contact.id} contactId={contact.id} />
+
+          <div className="my-4 border-t border-border" />
+
+          {/* Next appointment + book */}
+          <AppointmentPanel key={`appt-${contact.id}`} contact={contact} />
 
           {/* Divider */}
           <div className="my-4 border-t border-border" />

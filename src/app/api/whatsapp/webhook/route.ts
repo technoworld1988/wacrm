@@ -21,6 +21,7 @@ import {
 import { readCappedBody } from '@/lib/whatsapp/webhook-body'
 import { resumeAwaitingReply, runAutomationsForTrigger } from '@/lib/automations/engine'
 import { autoEnrollNewContact, markFollowUpsReplied } from '@/lib/followups/engine'
+import { applyAppointmentReply } from '@/lib/appointments/engine'
 import { dispatchInboundToFlows } from '@/lib/flows/engine'
 import { dispatchInboundToAiReply } from '@/lib/ai/auto-reply'
 import { dispatchWebhookEvent } from '@/lib/webhooks/deliver'
@@ -828,6 +829,8 @@ async function processMessage(
   // joins the account's auto-enroll sequence (if one is switched on).
   // Both never throw.
   await markFollowUpsReplied(accountId, contactRecord.id)
+  // "Confirm" / "Reschedule" (or 1 / 2) on an appointment reminder.
+  await applyAppointmentReply(accountId, contactRecord.id, contentText ?? null)
   if (contactOutcome.wasCreated) await autoEnrollNewContact(accountId, contactRecord.id)
 
   const flowResult = await dispatchInboundToFlows({

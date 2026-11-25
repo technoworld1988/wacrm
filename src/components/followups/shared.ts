@@ -34,7 +34,7 @@ export interface Enrollment {
 
 export async function sendJson(
   url: string,
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   body?: unknown,
 ): Promise<{ ok: boolean; error?: string; data?: Record<string, unknown> }> {
   try {

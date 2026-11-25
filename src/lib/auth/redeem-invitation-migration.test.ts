@@ -25,6 +25,9 @@ const tablesWithoutDomainData = new Set([
   // hang off contacts — which are already checked — and cascade with them.
   "followup_sequences",
   "followup_enrollments",
+  // Appointments (067) hang off contacts; settings are configuration.
+  "appointments",
+  "appointment_settings",
 ]);
 
 function accountScopedTables(): Set<string> {

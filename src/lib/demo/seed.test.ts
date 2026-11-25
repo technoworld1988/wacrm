@@ -42,6 +42,8 @@ describe('demo seed', () => {
     }
     for (const e of inserted.followup_enrollments) expect(e.contact_id).toBeTruthy()
     expect(inserted.contacts.length).toBeGreaterThanOrEqual(10)
+    for (const a of inserted.appointments) expect(a.contact_id).toBeTruthy()
+    expect(templateNames).toContain(inserted.appointment_settings[0].template_name)
     // Every row belongs to the demo account.
     for (const t of ['contacts', 'conversations', 'deals', 'message_templates', 'broadcasts', 'automations']) {
       for (const r of inserted[t]) expect(r.account_id).toBe('acc')

@@ -190,7 +190,7 @@ async function must<T>(p: PromiseLike<{ data: T; error: { message: string } | nu
 /** Wipe the demo account's business data. Contacts cascade to chats, deals, tags, enrollments. */
 export async function clearDemoData(db: SupabaseClient, accountId: string): Promise<void> {
   for (const table of [
-    'followup_sequences', 'broadcasts', 'automations', 'deals', 'pipelines',
+    'appointment_settings', 'followup_sequences', 'broadcasts', 'automations', 'deals', 'pipelines',
     'contacts', 'tags', 'message_templates', 'notifications',
   ]) {
     await must(db.from(table).delete().eq('account_id', accountId), `clear ${table}`)
@@ -387,6 +387,44 @@ export async function seedDemoData(
       { automation_id: autoId.get('After-hours reply'), step_type: 'condition', position: 0, step_config: { subject: 'time_of_day', operand: '20:00-09:00' } },
     ]),
     'automation steps',
+  )
+
+  // Appointments + reminder settings
+  const istAt = (dayOffset: number, hour: number, minute = 0) => {
+    // dayOffset days from today's India date, at hour:minute India time.
+    const ist = new Date(now.getTime() + 330 * 60_000)
+    return new Date(
+      Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate() + dayOffset, hour, minute) - 330 * 60_000,
+    ).toISOString()
+  }
+  await must(
+    db.from('appointment_settings').insert({
+      account_id: accountId,
+      template_name: 'appointment_reminder',
+      template_language: 'en',
+      variables: ['{{date}}', '{{time}}'],
+      remind_day_before: true,
+      remind_hours_before: 2,
+    }),
+    'appointment settings',
+  )
+  const appt = (key: string, fields: Record<string, unknown>) => ({
+    account_id: accountId, contact_id: cid(key), created_by: ownerUserId, duration_minutes: 60,
+    location: null, notes: null, status: 'scheduled', reminders_enabled: true,
+    day_before_sent_at: null, hours_before_sent_at: null, responded_at: null, ...fields,
+  })
+  await must(
+    db.from('appointments').insert([
+      appt('abdul', { title: 'Site visit – 3BHK measurement', starts_at: istAt(1, 11), location: 'Park Street', status: 'confirmed', day_before_sent_at: at(25 * H), responded_at: at(25 * H) }),
+      appt('fatima', { title: 'Kitchen measurement visit', starts_at: istAt(2, 16, 30), location: 'Behala' }),
+      appt('priya', { title: 'Site visit – 2BHK Salt Lake', starts_at: istAt(3, 11), location: 'Salt Lake, Sector 2' }),
+      appt('arjun', { title: 'Showroom visit – final quote', starts_at: istAt(0, 18), location: 'Sharma Interiors showroom', duration_minutes: 45, status: 'confirmed', day_before_sent_at: at(26 * H), hours_before_sent_at: null }),
+      appt('karthik', { title: 'Design consultation', starts_at: istAt(1, 15), status: 'reschedule_requested', day_before_sent_at: at(3 * H), responded_at: at(2 * H), notes: 'Asked for Sunday instead' }),
+      appt('meera', { title: 'Handover & final walkthrough', starts_at: istAt(-4, 12), status: 'completed', day_before_sent_at: at(5 * D), hours_before_sent_at: at(4 * D + 2 * H) }),
+      appt('rahul', { title: 'Wardrobe installation check', starts_at: istAt(-2, 10), status: 'completed', day_before_sent_at: at(3 * D) }),
+      appt('sandeep', { title: 'Site visit', starts_at: istAt(-1, 17), status: 'no_show', day_before_sent_at: at(2 * D), hours_before_sent_at: at(D + 2 * H) }),
+    ]),
+    'appointments',
   )
 
   // Follow-up sequence + enrollments
